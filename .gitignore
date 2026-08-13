@@ -1,0 +1,33 @@
+# === SECRETS / CREDENTIALS (never publish) ===
+config.yaml
+config.yaml.bak
+config.yaml.bak.*
+*.bak
+*.bak.*
+.env
+.env.*
+*.pem
+*.key
+secrets/
+credentials/
+
+# === RUNTIME STATE / DATA ===
+vrouter.db
+router_state.json
+history.jsonl
+models_cache.json
+*.sqlite
+*.sqlite3
+*.db
+
+# === PYTHON ===
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# === MISC ===
+.DS_Store
+*.log
+nohup.out

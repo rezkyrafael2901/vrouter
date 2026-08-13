@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#08090a">
+<title>VRouter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #08090a;
+  --bg2: #0f1011;
+  --card: #191a1b;
+  --card2: #28282c;
+  --border: rgba(255,255,255,0.08);
+  --border-sub: rgba(255,255,255,0.05);
+  --text: #f7f8f8;
+  --text2: #d0d6e0;
+  --text3: #8a8f98;
+  --text4: #62666d;
+  --accent: #5e6ad2;
+  --accent2: #7170ff;
+  --accent-h: #828fff;
+  --green: #10b981;
+  --red: #f2555a;
+  --amber: #e0a83c;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: "cv01", "ss03";
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.1px;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+.hidden { display: none !important; }
+
+/* LOGIN */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.login-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 44px 28px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: rgba(0,0,0,0.4) 0px 8px 40px;
+}
+.login-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 600;
+  color: white;
+  margin: 0 auto 22px;
+  box-shadow: 0 8px 32px rgba(94,106,210,0.35);
+}
+.login-title { font-size: 24px; font-weight: 590; letter-spacing: -0.5px; margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: var(--text3); margin-bottom: 30px; }
+.form-group { margin-bottom: 18px; text-align: left; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
+.form-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(94,106,210,0.18); }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 510;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  color: var(--text2);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.14); color: var(--text); }
+.btn:active { transform: translateY(0.5px); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-h); border-color: var(--accent-h); color: white; }
+.btn-danger { background: rgba(242,85,90,0.12); border-color: rgba(242,85,90,0.35); color: var(--red); }
+.btn-danger:hover { background: rgba(242,85,90,0.2); border-color: var(--red); color: var(--red); }
+.btn-full { width: 100%; padding: 14px; font-size: 15px; border-radius: 10px; }
+.btn-xs { padding: 7px 12px; font-size: 12px; border-radius: 7px; }
+
+/* HEADER */
+.header {
+  height: 56px;
+  background: rgba(8,9,10,0.8);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--border-sub);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.menu-btn { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 8px; }
+.header-title { font-size: 16px; font-weight: 590; letter-spacing: -0.3px; }
+.header-right { display: flex; gap: 8px; }
+
+/* CONTENT */
+.content {
+  padding: 20px 16px;
+  padding-bottom: 96px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* STATS */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border-sub);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.stat:hover { border-color: var(--border); }
+.stat::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--accent2);
+}
+.stat.green::before { background: var(--green); }
+.stat.red::before { background: var(--red); }
+.stat.purple::before { background: var(--amber); }
+.stat-val { font-size: 26px; font-weight: 600; line-height: 1; margin-bottom: 6px; letter-spacing: -0.8px; }
+.stat-lbl { font-size: 11px; font-weight: 510; text-transform: uppercase; color: var(--text3); letter-spacing: 0.06em; }
+
+/* CARDS */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border-sub);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.card-h {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border-sub);
+  font-size: 13px;
+  font-weight: 590;
+  letter-spacing: -0.2px;
+}
+.card-body { padding: 16px; }
+
+/* SECTION */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title { font-size: 18px; font-weight: 590; letter-spacing: -0.4px; }
+.section-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
+
+/* PROVIDER CARDS */
+.provider-list { display: flex; flex-direction: column; gap: 10px; }
+.provider-card {
+  background: var(--card);
+  border: 1px solid var(--border-sub);
+  border-radius: 12px;
+  padding: 14px;
+  transition: border-color 0.15s;
+}
+.provider-card:hover { border-color: var(--border); }
+.provider-card.inactive { opacity: 0.45; }
+.p-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.p-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(94,106,210,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 590;
+  color: var(--accent-h);
+  flex-shrink: 0;
+}
+.p-info { flex: 1; min-width: 0; }
+.p-name { font-size: 14px; font-weight: 590; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-url { font-size: 11px; color: var(--text4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.p-actions { display: flex; gap: 8px; }
+
+/* BADGES */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 510;
+}
+.badge-green { background: rgba(16,185,129,0.13); color: var(--green); }
+.badge-red { background: rgba(242,85,90,0.13); color: var(--red); }
+.badge-blue { background: rgba(94,106,210,0.15); color: var(--accent-h); }
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* TOGGLE */
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: var(--card2);
+  border-radius: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.toggle.on { background: var(--accent); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(18px); }
+
+/* TABLE */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 10px;
+  font-weight: 590;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text4);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border-sub);
+}
+.tbl td {
+  padding: 11px 12px;
+  font-size: 13px;
+  color: var(--text2);
+  border-bottom: 1px solid var(--border-sub);
+}
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tbody tr { transition: background 0.12s; }
+.tbl tbody tr:hover { background: rgba(255,255,255,0.02); }
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* COMBO/PROXY */
+.combo-list, .proxy-list { display: flex; flex-direction: column; gap: 10px; }
+.combo-card, .proxy-card {
+  background: var(--card);
+  border: 1px solid var(--border-sub);
+  border-radius: 12px;
+  padding: 14px;
+  transition: border-color 0.15s;
+}
+.combo-card:hover, .proxy-card:hover { border-color: var(--border); }
+.combo-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.combo-name { font-size: 14px; font-weight: 590; }
+.combo-routes { display: flex; flex-wrap: wrap; gap: 6px; }
+.combo-route { background: rgba(16,185,129,0.1); color: var(--green); padding: 3px 9px; border-radius: 6px; font-size: 11px; }
+.proxy-name { font-size: 14px; font-weight: 590; }
+.proxy-url { font-size: 11px; color: var(--text4); margin-top: 2px; }
+
+/* MODAL */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  animation: sheetUp 0.25s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-h {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-sub);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title { font-size: 16px; font-weight: 590; letter-spacing: -0.3px; }
+.modal-b { padding: 20px; overflow-y: auto; flex: 1; }
+.modal-f {
+  padding: 14px 20px;
+  padding-bottom: calc(14px + var(--safe-bottom));
+  border-top: 1px solid var(--border-sub);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* TOAST */
+.toast-wrap {
+  position: fixed;
+  bottom: calc(84px + var(--safe-bottom));
+  left: 16px;
+  right: 16px;
+  z-index: 300;
+  pointer-events: none;
+}
+.toast {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-top: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  animation: toastIn 0.2s ease;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.toast.ok { border-left: 2px solid var(--green); }
+.toast.err { border-left: 2px solid var(--red); }
+.toast.warn { border-left: 2px solid var(--amber); }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(62px + var(--safe-bottom));
+  background: rgba(15,16,17,0.9);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border-top: 1px solid var(--border-sub);
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 8px;
+  padding-bottom: var(--safe-bottom);
+}
+.nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 4px;
+  color: var(--text4);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 510;
+  transition: color 0.15s;
+}
+.nav-tab svg { width: 21px; height: 21px; }
+.nav-tab.active { color: var(--accent-h); }
+.nav-tab:active { opacity: 0.6; }
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 240px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border-sub);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.sidebar.open { transform: translateX(0); }
+.sidebar-header { padding: 18px 20px; border-bottom: 1px solid var(--border-sub); }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 30px; height: 30px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: white; }
+.logo-text { font-size: 16px; font-weight: 590; letter-spacing: -0.3px; }
+.sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+.nav-section { margin-bottom: 20px; }
+.nav-label { font-size: 10px; font-weight: 590; text-transform: uppercase; color: var(--text4); padding: 0 10px 6px; letter-spacing: 0.06em; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 510;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text2); }
+.nav-item.active { background: rgba(94,106,210,0.14); color: var(--accent-h); }
+.sidebar-footer { padding: 10px; border-top: 1px solid var(--border-sub); }
+.status-bar { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 13px; color: var(--text2); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 7px; box-shadow: 0 0 8px var(--green); }
+.sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; display: none; }
+.sidebar-overlay.show { display: block; }
+
+/* MAIN */
+.main { margin-left: 0; min-height: 100vh; }
+
+/* DESKTOP */
+@media (min-width: 769px) {
+  .sidebar { transform: translateX(0); }
+  .main { margin-left: 240px; }
+  .bottom-nav { display: none; }
+  body { padding-bottom: 0; }
+  .menu-btn { display: none; }
+  .content { padding-bottom: 40px; }
+  .stats { grid-template-columns: repeat(4, 1fr); }
+  .content { max-width: 1180px; margin: 0 auto; }
+}
+@media (max-width: 768px) {
+  .menu-btn { display: flex; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginBox" class="login-wrap">
+  <div class="login-card">
+    <div class="login-icon">V</div>
+    <div class="login-title">VRouter</div>
+    <div class="login-sub">AI Gateway Infrastructure</div>
+    <div id="loginErr" style="color:var(--red);font-size:13px;margin-bottom:20px;display:none"></div>
+    <form onsubmit="return login(event)">
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="lpass" class="form-input" placeholder="Enter password" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+    </form>
+    <div style="margin-top:24px;font-size:12px;color:var(--text3)">VRouter v2.4</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="main" class="app hidden">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">V</div>
+        <div class="logo-text">VRouter</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-label">Overview</div>
+        <div class="nav-item active" id="nav-endpoint" onclick="navTo('endpoint')">Dashboard</div>
+        <div class="nav-item" id="nav-health" onclick="navTo('health')">Health</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Config</div>
+        <div class="nav-item" id="nav-providers" onclick="navTo('providers')">Providers</div>
+        <div class="nav-item" id="nav-combos" onclick="navTo('combos')">Combos</div>
+        <div class="nav-item" id="nav-proxies" onclick="navTo('proxies')">Proxies</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Analytics</div>
+        <div class="nav-item" id="nav-modelstats" onclick="navTo('modelstats')">Model Stats</div>
+        <div class="nav-item" id="nav-history" onclick="navTo('history')">Logs</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">System</div>
+        <div class="nav-item" id="nav-settings" onclick="navTo('settings')">Settings</div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="status-bar">
+        <span><span class="dot"></span>Online</span>
+        <button class="btn btn-xs btn-danger" onclick="logout()">Exit</button>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- MAIN -->
+  <main class="main">
+    <header class="header">
+      <div class="header-left">
+        <button class="menu-btn" onclick="toggleSidebar()">
+          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="header-title" id="pageTitle">Dashboard</div>
+      </div>
+      <div class="header-right">
+        <button class="btn" onclick="loadAll()">Refresh</button>
+        <button class="btn btn-primary" onclick="testHealthCheck()">Health</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <div id="panel-endpoint" class="panel">
+        <div class="stats" id="statsGrid"></div>
+        <div class="card">
+          <div class="card-h">Quick Actions</div>
+          <div class="card-body">
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <button class="btn" onclick="navTo('providers')">Providers</button>
+              <button class="btn" onclick="navTo('combos')">Combos</button>
+              <button class="btn" onclick="navTo('history')">Logs</button>
+              <button class="btn" onclick="navTo('settings')">Settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROVIDERS -->
+      <div id="panel-providers" class="panel hidden">
+        <div class="section-header">
+          <div><div class="section-title">Providers</div><div class="section-sub">API connections</div></div>
+          <button class="btn btn-primary" onclick="openProviderModal()">+ Add</button>
+        </div>
+        <div class="provider-list" id="providersGrid"></div>
+      </div>
+
+      <!-- COMBOS -->
+      <div id="panel-combos" class="panel hidden">
+        <div class="section-header">
+          <div><div class="section-title">Combos</div><div class="section-sub">Routing strategies</div></div>
+          <button class="btn btn-primary" onclick="openComboModal()">+ Create</button>
+        </div>
+        <div class="combo-list" id="combosList"></div>
+      </div>
+
+      <!-- PROXIES -->
+      <div id="panel-proxies" class="panel hidden">
+        <div class="section-header">
+          <div><div class="section-title">Proxies</div><div class="section-sub">Proxy pools</div></div>
+          <button class="btn btn-primary" onclick="openProxyModal()">+ Add</button>
+        </div>
+        <div class="proxy-list" id="proxiesList"></div>
+      </div>
+
+      <!-- MODEL STATS -->
+      <div id="panel-modelstats" class="panel hidden">
+        <div class="section-header"><div><div class="section-title">Model Stats</div><div class="section-sub">Performance</div></div></div>
+        <div class="card"><div class="card-body"><div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Model</th><th>Total</th><th>OK</th><th>Err</th><th>Rate</th><th>Avg</th></tr></thead>
+          <tbody id="modelStatsBody"><tr><td colspan="6" style="text-align:center;color:var(--text3)">Loading...</td></tr></tbody>
+        </table></div></div></div>
+      </div>
+
+      <!-- HEALTH -->
+      <div id="panel-health" class="panel hidden">
+        <div class="section-header"><div><div class="section-title">Health</div><div class="section-sub">Real-time status</div></div>
+          <button class="btn" onclick="loadProviderHealth()">Refresh</button>
+        </div>
+        <div class="card"><div class="card-body"><div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Provider</th><th>Status</th><th>Req</th><th>Err</th><th>Rate</th><th>Latency</th></tr></thead>
+          <tbody id="healthBody"><tr><td colspan="6" style="text-align:center;color:var(--text3)">Loading...</td></tr></tbody>
+        </table></div></div></div>
+      </div>
+
+      <!-- HISTORY -->
+      <div id="panel-history" class="panel hidden">
+        <div class="section-header"><div><div class="section-title">Logs</div><div class="section-sub">Request history</div></div>
+          <button class="btn btn-danger btn-xs" onclick="clearHistory()">Clear</button>
+        </div>
+        <div class="card"><div class="card-body"><div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Time</th><th>Provider</th><th>Model</th><th>Status</th><th>Latency</th></tr></thead>
+          <tbody id="historyBody"><tr><td colspan="5" style="text-align:center;color:var(--text3)">Loading...</td></tr></tbody>
+        </table></div></div></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="panel-settings" class="panel hidden">
+        <div class="section-header"><div><div class="section-title">Settings</div><div class="section-sub">Configuration</div></div></div>
+        <div class="card">
+          <div class="card-body">
+            <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="settingPwd" placeholder="Change password"></div>
+            <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <div class="nav-tab active" id="bnav-endpoint" onclick="navTo('endpoint')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="nav-tab" id="bnav-providers" onclick="navTo('providers')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+      <span>Providers</span>
+    </div>
+    <div class="nav-tab" id="bnav-combos" onclick="navTo('combos')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+      <span>Combos</span>
+    </div>
+    <div class="nav-tab" id="bnav-history" onclick="navTo('history')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>Logs</span>
+    </div>
+    <div class="nav-tab" id="bnav-settings" onclick="navTo('settings')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <span>Settings</span>
+    </div>
+  </nav>
+</div>
+
+<!-- MODALS -->
+<div id="providerModal" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-h"><div class="modal-title">Add Provider</div><button class="btn btn-xs" onclick="closeModal('providerModal')">×</button></div>
+    <div class="modal-b">
+      <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="pName" placeholder="openai-compatible-xkiro"></div>
+      <div class="form-group"><label class="form-label">Base URL</label><input type="text" class="form-input" id="pUrl" placeholder="https://api.example.com/v1"></div>
+      <div class="form-group"><label class="form-label">API Keys</label><input type="text" class="form-input" id="pKey" placeholder="sk-...,sk-..."></div>
+      <div class="form-group"><label class="form-label">Prefix</label><input type="text" class="form-input" id="pPrefix" placeholder="xkiro"></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="closeModal('providerModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProvider()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="comboModal" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-h"><div class="modal-title">Create Combo</div><button class="btn btn-xs" onclick="closeModal('comboModal')">×</button></div>
+    <div class="modal-b">
+      <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="cmbName" placeholder="SMART-CODE"></div>
+      <div class="form-group"><label class="form-label">Strategy</label>
+        <select class="form-input" id="cmbStrategy">
+          <option value="fallback">Fallback</option>
+          <option value="round_robin">Round Robin</option>
+          <option value="random">Random</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Routes</label>
+        <div id="cmbRoutes" style="display:flex;flex-direction:column;gap:8px"></div>
+        <button class="btn btn-xs" onclick="addComboRoute()" style="margin-top:8px">+ Add Route</button>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="closeModal('comboModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCombo()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const API='';
+let state={};
+let curTab='endpoint';
+
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function toast(msg,type='ok'){const c=$('toasts');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),2500)}
+
+async function api(path,method='GET',body=null){
+  const opts={method,headers:{}};
+  if(body){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body)}
+  const r=await fetch(API+path,opts);
+  if(r.status===401){showLogin();throw new Error('auth')}
+  return r.json().catch(()=>({}));
+}
+
+function showLogin(){$('loginBox').classList.remove('hidden');$('main').classList.add('hidden')}
+function hideLogin(){$('loginBox').classList.add('hidden');$('main').classList.remove('hidden')}
+
+async function login(e){
+  if(e)e.preventDefault();
+  try{
+    const r=await api('/api/login','POST',{password:$('lpass').value});
+    if(r.ok){hideLogin();loadAll()}
+    else{$('loginErr').textContent=r.detail||'Password salah';$('loginErr').style.display='block'}
+  }catch(e){$('loginErr').textContent='Koneksi gagal';$('loginErr').style.display='block'}
+  return false;
+}
+
+async function logout(){await api('/api/logout','POST');showLogin()}
+
+async function loadAll(){
+  try{
+    state=await api('/api/status');
+    hideLogin();
+    renderDashboard();
+    renderProviders();
+    renderCombos();
+    renderProxies();
+    renderModelStats();
+    renderHealth();
+    restoreTab();
+  }catch(e){if(e.message!=='auth')toast('Gagal memuat','err')}
+}
+
+function renderDashboard(){
+  const s=state;
+  const stats=[
+    {label:'Providers',val:s.total_providers||0,cls:''},
+    {label:'Healthy',val:s.healthy_providers||0,cls:'green'},
+    {label:'Unhealthy',val:s.unhealthy_providers||0,cls:'red'},
+    {label:'Requests',val:s.total_requests||0,cls:'purple'},
+  ];
+  $('statsGrid').innerHTML=stats.map(st=>`
+    <div class="stat ${st.cls}">
+      <div class="stat-val">${st.val}</div>
+      <div class="stat-lbl">${st.label}</div>
+    </div>
+  `).join('');
+}
+
+function renderProviders(){
+  const provs=(state.providers||[]);
+  const list=$('providersGrid');
+  if(!provs.length){list.innerHTML='<div class="card"><div class="card-body" style="text-align:center;color:var(--text3)">Belum ada provider</div></div>';return}
+  list.innerHTML=provs.map(p=>`
+    <div class="provider-card ${p.is_active?'':'inactive'}" data-name="${esc(p.name)}">
+      <div class="p-head">
+        <div class="p-avatar">${p.prefix?p.prefix[0].toUpperCase():'?'}</div>
+        <div class="p-info">
+          <div class="p-name">${esc(p.name)}</div>
+          <div class="p-url">${esc(p.base_url||'')}</div>
+        </div>
+        <div class="toggle ${p.is_active?'on':''}" onclick="toggleProvider('${esc(p.name)}')"></div>
+      </div>
+      <div class="p-badges">
+        <span class="badge ${p.healthy?'badge-green':'badge-red'}"><span class="badge-dot"></span>${p.healthy?'Healthy':'Down'}</span>
+        <span class="badge badge-blue">${p.key_count||0} keys</span>
+        <span class="badge badge-blue">${p.models_count||0} models</span>
+      </div>
+      <div class="p-actions">
+        <button class="btn btn-xs" onclick="testProvider('${esc(p.name)}')">Test</button>
+        <button class="btn btn-xs btn-danger" onclick="deleteProvider('${esc(p.name)}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCombos(){
+  const combos=(state.combos||[]);
+  const list=$('combosList');
+  if(!combos.length){list.innerHTML='<div class="card"><div class="card-body" style="text-align:center;color:var(--text3)">Belum ada combo</div></div>';return}
+  list.innerHTML=combos.map(c=>`
+    <div class="combo-card">
+      <div class="combo-h">
+        <span class="combo-name">${esc(c.name)}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge badge-blue">${c.strategy||'fallback'}</span>
+          <button class="btn btn-xs btn-danger" onclick="deleteCombo('${esc(c.name)}')">Delete</button>
+        </div>
+      </div>
+      <div class="combo-routes">
+        ${(c.routes||[]).map(r=>`<span class="combo-route">${esc(r.provider)}/${esc(r.model)}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderProxies(){
+  const prox=(state.proxies||[]);
+  const list=$('proxiesList');
+  if(!prox.length){list.innerHTML='<div class="card"><div class="card-body" style="text-align:center;color:var(--text3)">Belum ada proxy</div></div>';return}
+  list.innerHTML=prox.map(p=>`
+    <div class="proxy-card">
+      <div><div class="proxy-name">${esc(p.name)}</div><div class="proxy-url">${esc(p.masked||p.url||'')}</div></div>
+      <button class="btn btn-xs btn-danger" onclick="deleteProxy('${esc(p.name)}')">Delete</button>
+    </div>
+  `).join('');
+}
+
+function renderModelStats(){
+  const tbody=$('modelStatsBody');
+  const stats=(state.model_stats||[]);
+  tbody.innerHTML=stats.slice(0,50).map(s=>`
+    <tr>
+      <td style="font-size:12px">${esc(s.model)}</td>
+      <td>${s.total}</td>
+      <td style="color:var(--green)">${s.ok}</td>
+      <td style="color:var(--red)">${s.err}</td>
+      <td>${s.success_rate}%</td>
+      <td>${s.avg_ms}ms</td>
+    </tr>
+  `).join('');
+}
+
+function renderHealth(){
+  const tbody=$('healthBody');
+  const provs=(state.providers||[]);
+  tbody.innerHTML=provs.map(p=>`
+    <tr>
+      <td style="font-size:12px">${esc(p.name)}</td>
+      <td><span class="badge ${p.healthy?'badge-green':'badge-red'}"><span class="badge-dot"></span>${p.healthy?'Healthy':'Down'}</span></td>
+      <td>${p.total_requests||0}</td>
+      <td style="color:var(--red)">${p.total_errors||0}</td>
+      <td>${p.total_requests?Math.round((p.total_requests-p.total_errors)/p.total_requests*100):0}%</td>
+      <td>${p.avg_latency?p.avg_latency+'ms':'-'}</td>
+    </tr>
+  `).join('');
+}
+
+function renderHistory(){
+  const tbody=$('historyBody');
+  const hist=(state.history||[]);
+  tbody.innerHTML=hist.slice(0,100).map(h=>`
+    <tr>
+      <td style="font-size:11px;color:var(--text3)">${new Date(h.ts*1000).toLocaleTimeString()}</td>
+      <td style="font-size:12px">${esc(h.provider)}</td>
+      <td style="font-size:12px">${esc(h.model)}</td>
+      <td><span class="badge ${h.status==='ok'?'badge-green':'badge-red'}">${h.status}</span></td>
+      <td>${h.ms}ms</td>
+    </tr>
+  `).join('');
+}
+
+function navTo(page){
+  curTab=page;
+  if(history.pushState){
+    const hash=page==='endpoint'?'':'#'+page;
+    window.history.pushState({page},'',hash);
+  }
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const nav=$('nav-'+page);
+  if(nav)nav.classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  const bnav=$('bnav-'+page);
+  if(bnav)bnav.classList.add('active');
+  document.querySelectorAll('.panel').forEach(el=>el.classList.add('hidden'));
+  const panel=$('panel-'+page);
+  if(panel)panel.classList.remove('hidden');
+  const titles={endpoint:['Dashboard'],providers:['Providers'],combos:['Combos'],proxies:['Proxies'],modelstats:['Model Stats'],health:['Health'],history:['Logs'],settings:['Settings']};
+  if(titles[page])$('pageTitle').textContent=titles[page][0];
+  if(page==='history')renderHistory();
+  if(window.innerWidth<768)$('sidebar').classList.remove('open');
+  $('sidebarOverlay').classList.remove('show');
+}
+
+function restoreTab(){
+  const hashPage=window.location.hash.slice(1);
+  const valid=['endpoint','providers','combos','proxies','modelstats','health','history','settings'];
+  if(hashPage&&valid.includes(hashPage))navTo(hashPage);
+  else navTo('endpoint');
+}
+
+function toggleSidebar(){$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show')}
+
+function toggleProvider(name){
+  const card=document.querySelector(`.provider-card[data-name="${name}"]`);
+  if(!card)return;
+  const p=(state.providers||[]).find(x=>x.name===name);
+  if(!p)return;
+  const newActive=!p.is_active;
+  card.classList.toggle('inactive',!newActive);
+  card.querySelector('.toggle').classList.toggle('on',newActive);
+  api(`/api/providers/${encodeURIComponent(name)}/toggle`,'POST',{is_active:newActive})
+    .then(()=>toast(`${name} ${newActive?'activated':'deactivated'}`))
+    .catch(e=>toast(e.message,'err'));
+}
+
+function testProvider(name){
+  toast(`Testing ${name}...`,'warn');
+  api(`/api/providers/${encodeURIComponent(name)}/test`,'POST')
+    .then(r=>toast(`${name}: ${r.status}`))
+    .catch(e=>toast(`${name}: ${e.message}`,'err'));
+}
+
+function deleteProvider(name){
+  if(!confirm(`Delete ${name}?`))return;
+  api(`/api/providers/${encodeURIComponent(name)}`,'DELETE')
+    .then(()=>{toast('Deleted');loadAll()})
+    .catch(e=>toast(e.message,'err'));
+}
+
+function openProviderModal(){$('pName').value='';$('pUrl').value='';$('pKey').value='';$('pPrefix').value='';$('providerModal').classList.remove('hidden')}
+function closeModal(id){$(id).classList.add('hidden')}
+
+function saveProvider(){
+  const name=$('pName').value.trim();
+  const url=$('pUrl').value.trim();
+  const keys=$('pKey').value.split(',').map(k=>k.trim()).filter(Boolean);
+  const prefix=$('pPrefix').value.trim()||name.slice(0,5);
+  if(!name||!url){toast('Name & URL required','err');return}
+  api('/api/providers','POST',{name,base_url:url,keys,prefix})
+    .then(()=>{closeModal('providerModal');toast('Added');loadAll()})
+    .catch(e=>toast(e.message,'err'));
+}
+
+function openComboModal(name){
+  $('cmbName').value=name||'';
+  $('cmbStrategy').value='fallback';
+  $('cmbRoutes').innerHTML='';
+  if(name){
+    const cb=(state.combos||[]).find(c=>c.name===name);
+    if(cb){$('cmbStrategy').value=cb.strategy||'fallback';(cb.routes||[]).forEach(r=>addComboRoute(r.provider,r.model))}
+  }else{addComboRoute()}
+  $('comboModal').classList.remove('hidden');
+}
+
+function addComboRoute(provider='',model=''){
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:8px';
+  const provs=(state.providers||[]).map(p=>`<option value="${esc(p.name)}" ${p.name===provider?'selected':''}>${esc(p.name)}</option>`).join('');
+  div.innerHTML=`<select class="form-input" style="flex:1">${provs}</select><input type="text" class="form-input" style="flex:1" placeholder="model" value="${esc(model)}"><button class="btn btn-xs" onclick="this.parentElement.remove()">×</button>`;
+  $('cmbRoutes').appendChild(div);
+}
+
+function saveCombo(){
+  const name=$('cmbName').value.trim();
+  const strategy=$('cmbStrategy').value;
+  const routes=[];
+  document.querySelectorAll('#cmbRoutes > div').forEach(div=>{
+    const inputs=div.querySelectorAll('select,input');
+    if(inputs[0].value&&inputs[1].value)routes.push({provider:inputs[0].value,model:inputs[1].value});
+  });
+  if(!name||!routes.length){toast('Name + route required','err');return}
+  const isEdit=(state.combos||[]).some(c=>c.name===name);
+  const path=isEdit?`/api/combos/${encodeURIComponent(name)}`:'/api/combos';
+  const method=isEdit?'PUT':'POST';
+  api(path,method,{name,routes,strategy})
+    .then(()=>{closeModal('comboModal');toast('Saved');loadAll()})
+    .catch(e=>toast(e.message,'err'));
+}
+
+function deleteCombo(name){
+  if(!confirm(`Delete ${name}?`))return;
+  api(`/api/combos/${encodeURIComponent(name)}`,'DELETE')
+    .then(()=>{toast('Deleted');loadAll()})
+    .catch(e=>toast(e.message,'err'));
+}
+
+function openProxyModal(){
+  const name=prompt('Proxy name:');if(!name)return;
+  const url=prompt('Proxy URL:');if(!url)return;
+  api('/api/proxies','POST',{name,url})
+    .then(()=>{toast('Added');loadAll()})
+    .catch(e=>toast(e.message,'err'));
+}
+
+function deleteProxy(name){
+  if(!confirm(`Delete ${name}?`))return;
+  api(`/api/proxies/${encodeURIComponent(name)}`,'DELETE')
+    .then(()=>{toast('Deleted');loadAll()})
+    .catch(e=>toast(e.message,'err'));
+}
+
+function clearHistory(){
+  if(!confirm('Clear history?'))return;
+  api('/api/history','DELETE')
+    .then(()=>{toast('Cleared');renderHistory()})
+    .catch(e=>toast(e.message,'err'));
+}
+
+function testHealthCheck(){
+  toast('Running health check...','warn');
+  api('/api/health-check','POST')
+    .then(()=>{toast('Done');loadAll()})
+    .catch(e=>toast(e.message,'err'));
+}
+
+function saveSettings(){
+  const pwd=$('settingPwd').value;
+  if(!pwd){toast('Password required','err');return}
+  toast('Settings saved','ok');
+}
+
+window.addEventListener('popstate',()=>{
+  const page=history.state?.page||(window.location.hash.slice(1)||'endpoint');
+  navTo(page);
+});
+
+(function init(){
+  const hashPage=window.location.hash.slice(1);
+  const valid=['endpoint','providers','combos','proxies','modelstats','health','history','settings'];
+  if(hashPage&&valid.includes(hashPage))curTab=hashPage;
+  api('/api/status').then(()=>{hideLogin();loadAll()}).catch(()=>showLogin());
+})();
+</script>
+
+<script>
+// PREVIEW MODE — mock data, bypass login
+window.__PREVIEW__=true;
+const MOCK={
+ total_providers:12, healthy_providers:11, unhealthy_providers:1, total_requests:48201,
+ providers:[
+  {name:'openai-compatible-opencode',base_url:'https://opencode.ai/zen/v1',prefix:'oc',is_active:true,healthy:true,key_count:3,models_count:7,total_requests:18420,total_errors:112,avg_latency:288},
+  {name:'openai-compatible-cupang',base_url:'https://ai.ipeenk.com/v1',prefix:'ipeenk',is_active:true,healthy:true,key_count:1,models_count:42,total_requests:9210,total_errors:54,avg_latency:331},
+  {name:'codebuddy-intl',base_url:'https://codebuddy.ai/v1',prefix:'cbai',is_active:true,healthy:true,key_count:2,models_count:6,total_requests:7330,total_errors:41,avg_latency:355},
+  {name:'openai-compatible-jerouter',base_url:'https://share.febfrmn.web.id/v1',prefix:'jr',is_active:true,healthy:true,key_count:1,models_count:6,total_requests:6120,total_errors:88,avg_latency:412},
+  {name:'agentrouter-local',base_url:'http://127.0.0.1:8318/v1',prefix:'ar',is_active:false,healthy:false,key_count:1,models_count:0,total_requests:2110,total_errors:301,avg_latency:0}
+ ],
+ combos:[
+  {name:'OPENCODE',strategy:'fallback',routes:[{provider:'oc',model:'deepseek-v4-flash-free'},{provider:'ipeenk',model:'glm-5.2'}]},
+  {name:'CUPANG',strategy:'round_robin',routes:[{provider:'ipeenk',model:'qwen-max'},{provider:'ipeenk',model:'kimi-k2.7-code'}]},
+  {name:'SMART-CODE',strategy:'fallback',routes:[{provider:'cbai',model:'glm-5.2'},{provider:'jr',model:'f/big-pickle'}]}
+ ],
+ proxies:[
+  {name:'Geonode-Residential',masked:'http://geonode_***@92.204.164.15:9000'},
+  {name:'ProxyScrape-Premium',masked:'http://suybk***@proxy:3129'}
+ ],
+ model_stats:[
+  {model:'deepseek-v4-flash-free',total:12040,ok:11890,err:150,success_rate:98.8,avg_ms:288},
+  {model:'glm-5.2',total:8210,ok:8120,err:90,success_rate:98.9,avg_ms:331},
+  {model:'kimi-k2.7-code',total:5120,ok:5001,err:119,success_rate:97.7,avg_ms:402},
+  {model:'qwen-max',total:3980,ok:3910,err:70,success_rate:98.2,avg_ms:355}
+ ],
+ history:[
+  {ts:Date.now()/1000-12,provider:'oc',model:'deepseek-v4-flash-free',status:'ok',ms:271},
+  {ts:Date.now()/1000-40,provider:'ipeenk',model:'glm-5.2',status:'ok',ms:318},
+  {ts:Date.now()/1000-95,provider:'jr',model:'f/big-pickle',status:'err',ms:0},
+  {ts:Date.now()/1000-160,provider:'cbai',model:'kimi-k2.7-code',status:'ok',ms:389}
+ ]
+};
+// Override networking
+window.__origFetch=window.fetch;
+window.fetch=async function(u,o){return {status:200,json:async()=>MOCK};};
+function __show(){try{state=MOCK;hideLogin();renderDashboard();renderProviders();renderCombos();renderProxies();renderModelStats();renderHealth();renderHistory();}catch(e){console.log('mock',e)}}
+document.addEventListener('DOMContentLoaded',()=>{
+  __show();setTimeout(__show,50);setTimeout(__show,300);
+});
+</script>
+
+</body>
+</html>
+
