@@ -9,6 +9,7 @@ import asyncio
 import json
 import os
 import random
+import re
 import secrets
 import time
 from collections import deque, defaultdict
@@ -388,6 +389,8 @@ PROVIDERS: dict[str, Provider] = {}
 PROXIES: dict[str, str] = {}    # pool name -> proxy URL
 COMBOS: dict[str, dict] = {}    # combo name -> {routes: [{provider, model, weight}]}
 HISTORY: deque = deque(maxlen=HISTORY_MAX)   # [ {ts, provider, model, status, code, ms, err} ]
+# Track provider names the user explicitly deleted — sync_9router must NOT re-add these
+DELETED_PROVIDERS: set[str] = set()
 
 # Phase 1 — Smart routing infrastructure
 MODEL_STATS: dict[str, dict] = {}    # "provider/model" -> stats
@@ -832,22 +835,40 @@ def _load_models_cache():
         if os.path.exists(MODELS_CACHE_PATH):
             with open(MODELS_CACHE_PATH) as f:
                 cache = json.load(f)
+            changed = False
             for name, data in cache.items():
+                # Skip deleted providers — don't let stale cache resurrect them
+                if name in DELETED_PROVIDERS:
+                    cache.pop(name, None)
+                    changed = True
+                    continue
                 p = PROVIDERS.get(name)
                 if p:
                     p.models = data.get("models", [])
                     p.models_fetched_at = data.get("fetched_at", 0)
+                else:
+                    # Provider doesn't exist anymore — clean cache entry
+                    cache.pop(name, None)
+                    changed = True
+            if changed:
+                try:
+                    with open(MODELS_CACHE_PATH, "w") as f:
+                        json.dump(cache, f)
+                except Exception:
+                    pass
     except Exception:
         pass
 
 
 def load_config():
     """(Re)load providers, proxies and combos from CONFIG."""
-    global CONFIG, SERVER_CFG, ROUTER_CFG, API_KEY, DASH_USER, DASH_PASS, PROVIDER_MODEL_COSTS
+    global CONFIG, SERVER_CFG, ROUTER_CFG, API_KEY, DASH_USER, DASH_PASS, PROVIDER_MODEL_COSTS, DELETED_PROVIDERS
     PROVIDERS.clear()
     PROXIES.clear()
     COMBOS.clear()
     PROVIDER_MODEL_COSTS.clear()
+    # Restore deleted provider names so sync_9router doesn't re-add them
+    DELETED_PROVIDERS = set(CONFIG.get("deleted_providers", []))
     for p in CONFIG.get("providers", []):
         PROVIDERS[p["name"]] = Provider(
             name=p["name"],
@@ -1297,7 +1318,7 @@ async def _stream_worker(provider: Provider, upstream_model: str, body: dict,
             if resp.status_code == 429:
                 mark_key_429(provider.name, key)
             return
-        async for raw in resp.aiter_raw():
+        async for raw in resp.aiter_bytes():
             if not signal.is_set():
                 signal.set()
                 box["ms"] = int((time.time() - t0) * 1000)   # first-byte latency
@@ -1445,7 +1466,543 @@ async def list_models(authorization: Optional[str] = Header(None)):
                 if mid not in seen:
                     data.append({"id": mid, "object": "model", "created": 0, "owned_by": p.name})
                     seen.add(mid)
+    # Anthropic aliases (so /v1/messages clients see claude-* models)
+    for alias in list(ANTHROPIC_MODEL_MAP.keys()) + ([ANTHROPIC_DEFAULT_MODEL] if ANTHROPIC_DEFAULT_MODEL else []):
+        if alias and alias not in seen:
+            data.append({"id": alias, "object": "model", "created": 0, "owned_by": "anthropic"})
+            seen.add(alias)
     return {"object": "list", "data": data}
+
+
+# ---------------------------------------------------------------------------
+# Anthropic-format compatibility layer (/v1/messages)
+# Translate Anthropic request <-> OpenAI internally, reusing the mature
+# chat_completions core (hedge, failover, retries, stats, logging).
+# ---------------------------------------------------------------------------
+ANTHROPIC_CFG = CONFIG.get("anthropic", {})
+ANTHROPIC_MODEL_MAP = ANTHROPIC_CFG.get("model_map", {})
+ANTHROPIC_DEFAULT_MODEL = ANTHROPIC_CFG.get("default_model", "")
+
+
+def _resolve_anthropic_model(model: str) -> str:
+    """Map an Anthropic model name (claude-*) to a VRouter combo / provider model.
+    1) combo passthrough  2) exact map  3) fuzzy map  4) default for claude-*  5) as-is."""
+    if not model:
+        return ANTHROPIC_DEFAULT_MODEL or ""
+    if model in COMBOS:
+        return model  # allow direct combo calls through /v1/messages
+    if model in ANTHROPIC_MODEL_MAP:
+        return ANTHROPIC_MODEL_MAP[model]
+    base = model.lower()
+    for k, v in ANTHROPIC_MODEL_MAP.items():
+        if k.lower() in base or base in k.lower():
+            return v
+    if base.startswith("claude") and ANTHROPIC_DEFAULT_MODEL:
+        return ANTHROPIC_DEFAULT_MODEL
+    return model
+
+
+def _anthropic_content_to_openai(content):
+    """Anthropic content (str OR block list) -> OpenAI content (str OR parts list).
+    Handles text / image (base64 data URL) / tool_result blocks."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        text_buf = []
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            t = block.get("type")
+            if t == "text":
+                text_buf.append(block.get("text", ""))
+            elif t == "image":
+                if text_buf:
+                    parts.append({"type": "text", "text": "\n".join(text_buf)})
+                    text_buf = []
+                src = block.get("source", {})
+                if src.get("type") == "base64":
+                    media = src.get("media_type", "image/png")
+                    data = src.get("data", "")
+                    parts.append({"type": "image_url", "image_url": {"url": f"data:{media};base64,{data}"}})
+                elif src.get("type") == "url":
+                    parts.append({"type": "image_url", "image_url": {"url": src.get("url", "")}})
+            elif t == "tool_result":
+                rc = block.get("content", "")
+                if isinstance(rc, list):
+                    rc = " ".join(b.get("text", "") for b in rc if isinstance(b, dict))
+                text_buf.append(f"[tool_result]\n{rc}")
+        if text_buf:
+            parts.append({"type": "text", "text": "\n".join(text_buf)})
+        if not parts:
+            return ""
+        if len(parts) == 1 and parts[0]["type"] == "text":
+            return parts[0]["text"]
+        return parts
+    return str(content)
+
+
+def _anthropic_assistant_to_openai(msg: dict) -> dict:
+    """Convert an Anthropic assistant message (text + tool_use blocks) to OpenAI."""
+    content = msg.get("content")
+    tool_calls = []
+    text_parts = []
+    if isinstance(content, list):
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            t = block.get("type")
+            if t == "text":
+                text_parts.append(block.get("text", ""))
+            elif t == "tool_use":
+                tool_calls.append({
+                    "id": block.get("id", ""),
+                    "type": "function",
+                    "function": {
+                        "name": block.get("name", ""),
+                        "arguments": json.dumps(block.get("input", {}))
+                    }
+                })
+    out = {"role": "assistant"}
+    out["content"] = "\n".join(text_parts) if text_parts else None
+    if tool_calls:
+        out["tool_calls"] = tool_calls
+    return out
+
+
+def _anthropic_tools_to_openai(tools):
+    """Anthropic tools [{name,description,input_schema}] -> OpenAI [{type:function,...}]."""
+    out = []
+    for t in tools or []:
+        if not isinstance(t, dict):
+            continue
+        out.append({
+            "type": "function",
+            "function": {
+                "name": t.get("name", ""),
+                "description": t.get("description", ""),
+                "parameters": t.get("input_schema", {"type": "object"})
+            }
+        })
+    return out if out else None
+
+
+def _anthropic_tool_choice_to_openai(tc):
+    """Anthropic tool_choice {auto|any|tool:{name}} -> OpenAI tool_choice."""
+    if tc is None:
+        return None
+    if isinstance(tc, str):
+        return tc  # "auto" / "required" passthrough
+    if isinstance(tc, dict):
+        t = tc.get("type")
+        if t == "auto":
+            return "auto"
+        if t == "any":
+            return "required"
+        if t == "tool":
+            name = tc.get("name", "")
+            return {"type": "function", "function": {"name": name}}
+    return None
+
+
+def _anthropic_user_to_openai(m: dict) -> list:
+    """Anthropic user message may mix text + tool_result blocks. OpenAI requires
+    tool results as separate {role: tool, tool_call_id} messages, so split them."""
+    content = m.get("content")
+    if not isinstance(content, list):
+        return [{"role": "user", "content": _anthropic_content_to_openai(content)}]
+    text_buf = []
+    out = []
+    for block in content:
+        if not isinstance(block, dict):
+            continue
+        t = block.get("type")
+        if t == "tool_result":
+            if text_buf:
+                out.append({"role": "user", "content": "\n".join(text_buf)})
+                text_buf = []
+            rc = block.get("content", "")
+            if isinstance(rc, list):
+                rc = " ".join(b.get("text", "") for b in rc if isinstance(b, dict))
+            tool_msg = {"role": "tool", "tool_call_id": block.get("tool_use_id", ""), "content": rc}
+            if block.get("is_error"):
+                tool_msg["content"] = f"[ERROR] {rc}"
+            out.append(tool_msg)
+        else:
+            text_buf.append(str(block.get("text", "")))
+    if text_buf:
+        out.append({"role": "user", "content": "\n".join(text_buf)})
+    return out
+
+
+def _extract_resp_text(resp_data, is_chunk: bool = False) -> str:
+    """Pull assistant plaintext out of an OpenAI chat.completion (or stream chunk)."""
+    if not isinstance(resp_data, dict):
+        return ""
+    ch = resp_data.get("choices") or []
+    if ch:
+        slot = ch[0].get("delta") if is_chunk else (ch[0].get("message") or {})
+        txt = slot.get("content") if is_chunk else (slot.get("content") or slot.get("reasoning_content") or "")
+        if is_chunk:
+            txt = slot.get("content") or slot.get("reasoning_content") or ""
+        if isinstance(txt, list):
+            txt = " ".join(b.get("text", "") for b in txt if isinstance(b, dict))
+        return txt or ""
+    return ""
+
+
+# Response quality gate (upgrade #2). Detect empty / refusal / repetition /
+# garbage so a bad upstream result cascades to the next healthy provider
+# instead of surfacing to the client.
+_REFUSAL_PATTERNS = [
+    "i'm sorry", "i am sorry", "sorry, but", "i cannot", "i can't",
+    "i won't", "i will not", "i'm not able to", "i am not able to",
+    "i'm unable to", "i am unable to", "i must decline", "i must refuse",
+    "i'm not allowed", "as an ai", "as an artificial intelligence",
+    "i'm not permitted to", "i cannot provide", "i can only provide",
+    "against my guidelines", "designed to be helpful", "i'm a language model",
+]
+_REFUSAL_RE = re.compile("|".join(re.escape(p) for p in _REFUSAL_PATTERNS), re.IGNORECASE)
+# Start-anchored variant: refusal where the assistant *opens* with an apology/decline.
+_REFUSAL_START_RE = re.compile(
+    r"^(?:\s*(?:" + "|".join(re.escape(p) for p in _REFUSAL_PATTERNS) + r"))",
+    re.IGNORECASE)
+_REPEAT_RE = re.compile(r"(\b[\w.,?!']{2,}\b\s*)\1{3,}", re.IGNORECASE)
+
+
+def quality_check(resp_data, is_chunk: bool = False):
+    """Return (ok: bool, reason: str). ok=False if response is empty/refusal/repeat/garbage."""
+    text = _extract_resp_text(resp_data, is_chunk)
+    if not text or not text.strip():
+        return False, "empty content"
+    low = text.lower().strip()
+    words = low.split()
+    # Flag a refusal only when the reply *starts* with a refusal phrase (permulaan),
+    # OR it is a short apology-only message (<=14 words) that contains one.
+    # Long, substantive answers that merely mention "I can't" mid-sentence pass.
+    if _REFUSAL_START_RE.search(low):
+        return False, "refusal pattern"
+    if len(words) <= 10 and _REFUSAL_RE.search(low):
+        return False, "refusal pattern"
+    # unicode/garbage ratio: >10% non-printable junk in a real response
+    if len(text) > 30:
+        non_text = sum(1 for c in text if not (c.isprintable() or c in "\n\r\t "))
+        if non_text / len(text) > 0.10:
+            return False, "unicode garbage ratio"
+    if _REPEAT_RE.search(text):
+        return False, "repetition loop"
+    return True, ""
+
+
+def _anthropic_to_openai_body(body: dict) -> dict:
+    """Translate an Anthropic /v1/messages request into an OpenAI chat.completions body."""
+    obody = dict(body)
+    # Model resolution: combo passthrough > map > default > as-is
+    obody["model"] = _resolve_anthropic_model(body.get("model", ""))
+    # system top-level -> prepend system message
+    system = body.get("system")
+    msgs = []
+    if system:
+        if isinstance(system, list):
+            system = " ".join(b.get("text", "") for b in system if isinstance(b, dict))
+        msgs.append({"role": "system", "content": system})
+    for m in body.get("messages", []):
+        if not isinstance(m, dict):
+            continue
+        role = m.get("role")
+        if role == "assistant":
+            msgs.append(_anthropic_assistant_to_openai(m))
+        elif role == "user":
+            msgs.extend(_anthropic_user_to_openai(m))
+        else:
+            msgs.append({"role": role, "content": _anthropic_content_to_openai(m.get("content"))})
+    obody["messages"] = msgs
+    # tools + tool_choice
+    tools = _anthropic_tools_to_openai(body.get("tools"))
+    if tools:
+        obody["tools"] = tools
+    else:
+        obody.pop("tools", None)
+    tc = _anthropic_tool_choice_to_openai(body.get("tool_choice"))
+    if tc:
+        obody["tool_choice"] = tc
+    else:
+        obody.pop("tool_choice", None)
+    # stop_sequences -> stop; drop Anthropic-only fields that break OpenAI upstreams
+    if body.get("stop_sequences"):
+        obody["stop"] = body["stop_sequences"]
+    obody.pop("stop_sequences", None)
+    obody.pop("thinking", None)          # not universal upstream; strip to avoid breakage
+    obody.pop("metadata", None)
+    obody["max_tokens"] = body.get("max_tokens", 1024)
+    return obody
+
+
+def _safe_json_load(s: str):
+    try:
+        return json.loads(s) if s else {}
+    except Exception:
+        return {}
+
+
+def _openai_to_anthropic_response(data: dict, req_model: str) -> dict:
+    """Convert an OpenAI chat.completion (non-stream) into an Anthropic message."""
+    choices = data.get("choices") or []
+    content = []
+    stop_reason = "end_turn"
+    if choices:
+        ch = choices[0]
+        msg = ch.get("message") or {}
+        txt = msg.get("content") or ""
+        if txt:
+            content.append({"type": "text", "text": txt})
+        for tc in msg.get("tool_calls") or []:
+            fn = tc.get("function") or {}
+            content.append({
+                "type": "tool_use",
+                "id": tc.get("id", "toolu_1"),
+                "name": fn.get("name", ""),
+                "input": _safe_json_load(fn.get("arguments", "{}"))
+            })
+        fr = ch.get("finish_reason")
+        stop_map = {"stop": "end_turn", "length": "max_tokens", "tool_calls": "tool_use",
+                    "function_call": "tool_use", "content_filter": "end_turn"}
+        stop_reason = stop_map.get(fr, "end_turn")
+    usage = data.get("usage") or {}
+    return {
+        "id": "msg_" + str(data.get("id", "msg_1")).replace("chatcmpl-", ""),
+        "type": "message",
+        "role": "assistant",
+        "content": content if content else [{"type": "text", "text": ""}],
+        "model": req_model,
+        "stop_reason": stop_reason,
+        "stop_sequence": None,
+        "usage": {
+            "input_tokens": usage.get("prompt_tokens", 0) or 0,
+            "output_tokens": usage.get("completion_tokens", 0) or 0,
+        }
+    }
+
+
+class AnthropicSSE:
+    """Translate OpenAI chat.completion.chunk SSE stream -> Anthropic message SSE events.
+    State machine: emits message_start -> content_block_start/delta/stop per block ->
+    message_delta -> message_stop. Handles text, reasoning_content, and tool_calls."""
+
+    def __init__(self, req_model: str, prompt_tokens: int = 0):
+        self.msg_id = "msg_" + secrets.token_hex(12)
+        self.req_model = req_model
+        self.prompt_tokens = prompt_tokens
+        self.content_blocks = []   # list of (kind, index)
+        self.tool_blocks = {}      # openai tool index -> anthropic block index
+        self._tool_names = {}      # openai tool index -> name (may arrive late)
+        self.block_index = 0
+        self.started = False
+        self.stopped = False
+        self.output_tokens = 0
+        self.acc_text = []
+
+    def _event(self, event: str, data: dict) -> bytes:
+        return f"event: {event}\ndata: {json.dumps(data)}\n\n".encode()
+
+    def message_start(self) -> bytes:
+        return self._event("message_start", {
+            "type": "message_start",
+            "message": {
+                "id": self.msg_id, "type": "message", "role": "assistant",
+                "content": [], "model": self.req_model,
+                "stop_reason": None, "stop_sequence": None,
+                "usage": {"input_tokens": self.prompt_tokens, "output_tokens": 0}
+            }})
+
+    def _start_text_block(self) -> bytes:
+        idx = self.block_index
+        self.block_index += 1
+        self.content_blocks.append(("text", idx))
+        return self._event("content_block_start", {
+            "type": "content_block_start", "index": idx,
+            "content_block": {"type": "text", "text": ""}})
+
+    def _start_tool_block(self, tidx: int, name: str) -> bytes:
+        idx = self.block_index
+        self.block_index += 1
+        self.tool_blocks[tidx] = idx
+        self.content_blocks.append(("tool", idx))
+        tid = f"toolu_{tidx}"
+        return self._event("content_block_start", {
+            "type": "content_block_start", "index": idx,
+            "content_block": {"type": "tool_use", "id": tid, "name": name, "input": {}}})
+
+    def _text_delta(self, idx: int, text: str) -> bytes:
+        return self._event("content_block_delta", {
+            "type": "content_block_delta", "index": idx,
+            "delta": {"type": "text_delta", "text": text}})
+
+    def _input_delta(self, idx: int, partial: str) -> bytes:
+        return self._event("content_block_delta", {
+            "type": "content_block_delta", "index": idx,
+            "delta": {"type": "input_json_delta", "partial_json": partial}})
+
+    def _stop_blocks(self) -> bytes:
+        out = b""
+        for _kind, idx in self.content_blocks:
+            out += self._event("content_block_stop", {"type": "content_block_stop", "index": idx})
+        self.content_blocks = []
+        return out
+
+    def finish(self, stop_reason: str = "end_turn") -> bytes:
+        out = self._stop_blocks()
+        out += self._event("message_delta", {
+            "type": "message_delta",
+            "delta": {"stop_reason": stop_reason, "stop_sequence": None},
+            "usage": {"output_tokens": self.output_tokens}})
+        out += self._event("message_stop", {"type": "message_stop"})
+        self.stopped = True
+        return out
+
+    def feed(self, obj: dict) -> bytes:
+        """Process one OpenAI chunk; return translated SSE bytes (may be empty)."""
+        out = b""
+        if not self.started:
+            self.started = True
+            out += self.message_start()
+        choices = obj.get("choices") or []
+        usage = obj.get("usage") or {}
+        if usage:
+            self.output_tokens = max(self.output_tokens, usage.get("completion_tokens", 0) or 0)
+        if not choices:
+            return out
+        ch = choices[0]
+        delta = ch.get("delta") or {}
+        txt = delta.get("content")
+        if txt:
+            open_text = [i for k, i in self.content_blocks if k == "text"]
+            if not open_text:
+                out += self._start_text_block()
+                open_text = [i for k, i in self.content_blocks if k == "text"]
+            out += self._text_delta(open_text[-1], txt)
+            self.acc_text.append(txt)
+        rc = delta.get("reasoning_content") or delta.get("reasoning")
+        if rc and not txt:
+            open_text = [i for k, i in self.content_blocks if k == "text"]
+            if not open_text:
+                out += self._start_text_block()
+                open_text = [i for k, i in self.content_blocks if k == "text"]
+            out += self._text_delta(open_text[-1], rc)
+            self.acc_text.append(rc)
+        for tci in delta.get("tool_calls") or []:
+            if not isinstance(tci, dict):
+                continue
+            tidx = tci.get("index", 0)
+            fn = tci.get("function") or {}
+            if tidx not in self.tool_blocks:
+                # OpenAI tool_calls are keyed by index; id/name can arrive on a
+                # later chunk. Reserve the block by index, fill id/name when seen.
+                if self._tool_names.get(tidx) is None:
+                    self._tool_names[tidx] = fn.get("name", "") or ""
+                out += self._start_tool_block(tidx, self._tool_names[tidx])
+            # id/name may arrive after block start — update stored identity
+            if fn.get("name"):
+                self._tool_names[tidx] = fn["name"]
+            args = fn.get("arguments")
+            if args:
+                out += self._input_delta(self.tool_blocks[tidx], args)
+        fr = ch.get("finish_reason")
+        if fr and not self.stopped:
+            stop_map = {"stop": "end_turn", "length": "max_tokens", "tool_calls": "tool_use",
+                        "function_call": "tool_use", "content_filter": "end_turn"}
+            if not self.output_tokens and self.acc_text:
+                self.output_tokens = count_tokens("".join(self.acc_text))
+            out += self.finish(stop_map.get(fr, "end_turn"))
+        return out
+
+
+class _ShimRequest:
+    """Minimal stand-in for FastAPI Request — lets /v1/messages reuse chat_completions
+    with a pre-translated body while keeping the same app.state (clients, stats)."""
+    def __init__(self, body: dict, app: FastAPI):
+        self._body = body
+        self.app = app
+        self.client = getattr(app.state, "client", None)
+        self.state = app.state
+
+    async def json(self):
+        return self._body
+
+
+@app.post("/v1/messages")
+async def anthropic_messages(request: Request,
+                             x_api_key: Optional[str] = Header(None),
+                             authorization: Optional[str] = Header(None),
+                             anthropic_version: Optional[str] = Header(None)):
+    """Anthropic Messages API (Claude Code / Anthropic SDK compatible).
+    Accepts x-api-key (Anthropic style) OR Authorization: Bearer (OpenAI style)."""
+    key = x_api_key or authorization or ""
+    check_gateway_key(key)
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Invalid JSON body")
+    if not isinstance(body, dict):
+        raise HTTPException(400, "Body must be a JSON object")
+    stream = bool(body.get("stream", False))
+    req_model = body.get("model", "")
+    openai_body = _anthropic_to_openai_body(body)
+    openai_body["stream"] = stream
+    if stream and "stream_options" not in openai_body:
+        openai_body["stream_options"] = {"include_usage": True}
+    # Reuse the full chat_completions core (hedge/failover/retry/stats/log).
+    try:
+        resp = await chat_completions(_ShimRequest(openai_body, request.app),
+                                      authorization=f"Bearer {API_KEY}")
+    except HTTPException as e:
+        # OpenAI-style 502 detail -> Anthropic-style error envelope
+        try:
+            detail = json.loads(e.detail) if isinstance(e.detail, str) else e.detail
+        except Exception:
+            detail = {"message": str(e.detail)}
+        err = detail.get("error", {}) if isinstance(detail, dict) else {}
+        return JSONResponse(
+            {"type": "error", "error": {
+                "type": err.get("type", "api_error"),
+                "message": err.get("message", str(e.detail))}},
+            status_code=e.status_code)
+    if not stream:
+        data = json.loads(resp.body) if isinstance(resp.body, (bytes, bytearray)) else resp.body
+        if isinstance(data, dict) and data.get("object") == "chat.completion":
+            return JSONResponse(_openai_to_anthropic_response(data, req_model))
+        return resp  # error passthrough
+
+    translator = AnthropicSSE(req_model, count_prompt_tokens(openai_body))
+
+    async def _translate():
+        try:
+            async for chunk in resp.body_iterator:
+                text = chunk.decode("utf-8", "ignore") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
+                for line in text.splitlines():
+                    line = line.strip()
+                    if not line.startswith("data:"):
+                        continue
+                    payload = line[5:].strip()
+                    if payload == "[DONE]":
+                        if not translator.stopped:
+                            yield translator.finish("end_turn")
+                        return
+                    try:
+                        obj = json.loads(payload)
+                    except Exception:
+                        continue
+                    ev = translator.feed(obj)
+                    if ev:
+                        yield ev
+            if not translator.stopped:
+                yield translator.finish("end_turn")
+        except Exception:
+            if not translator.stopped:
+                yield translator.finish("end_turn")
+
+    return StreamingResponse(_translate(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @app.post("/v1/chat/completions")
@@ -1551,7 +2108,15 @@ async def chat_completions(request: Request, authorization: Optional[str] = Head
                             timeout=route_timeout)
 
                 if resp.status_code >= 400:
-                    err_text = resp.text[:500]
+                    # Streaming responses can't read .text without read() —
+                    # read a bounded chunk first so the real error surfaces.
+                    if stream:
+                        try:
+                            err_text = (await asyncio.wait_for(resp.aread(), timeout=5)).decode("utf-8", "ignore")[:500]
+                        except Exception:
+                            err_text = f"HTTP {resp.status_code} (stream error body)"
+                    else:
+                        err_text = resp.text[:500]
                     provider.last_error = f"[{resp.status_code}] {err_text}"
                     provider.total_errors += 1
                     latency_ms = (time.time() - t_attempt) * 1000
@@ -1597,6 +2162,21 @@ async def chat_completions(request: Request, authorization: Optional[str] = Head
                     resp_data = parse_upstream_json(resp)
                     if resp_data is None:
                         raise ValueError(f"non-JSON body {resp.text[:100]!r}")
+                    # --- Response quality gate (upgrade #2) ---
+                    # On empty / refusal / repetition / garbage, fail over to the
+                    # next healthy provider instead of returning a bad response.
+                    _qok, _qreason = quality_check(resp_data)
+                    if not _qok:
+                        provider.total_errors += 1
+                        latency_ms = (time.time() - t_attempt) * 1000
+                        mark_model_error(provider.name, upstream_model, f"quality:{_qreason}")
+                        update_model_stats(provider.name, upstream_model, "quality_rejected", latency_ms)
+                        log_history({"provider": provider.name, "model": upstream_model, "req_model": model,
+                                     "status": "error", "code": resp.status_code, "ms": latency_ms,
+                                     "err": f"quality:{_qreason}", "proxy": provider.proxy or "direct",
+                                     "stream": False, "failover": True, "retry": retry})
+                        errors.append(f"{provider.name}: quality={_qreason} (failover)")
+                        break  # next provider candidate
 
                     # Extract token usage
                     prompt_tokens = 0
@@ -1643,7 +2223,7 @@ async def chat_completions(request: Request, authorization: Optional[str] = Head
                 _prov_name = provider.name
                 _proxy = provider.proxy or "direct"
                 _provider_ref = provider
-                _stream_iter = resp.aiter_raw()
+                _stream_iter = resp.aiter_bytes()
                 _first_chunk = b""
                 _t_first = None
                 _t_gen_start = time.time()
@@ -1696,6 +2276,36 @@ async def chat_completions(request: Request, authorization: Optional[str] = Head
                                  "stream": True, "failover": True})
                     errors.append(f"{provider.name}: stream prime error (failover)")
                     break  # next provider candidate
+
+                # Streaming quality gate (upgrade #2): peek the primed first chunk.
+                # If it already contains a refusal / repetition / garbage pattern,
+                # abort before committing the StreamingResponse and fail over.
+                _peek_text = ""
+                try:
+                    for _pl in _first_chunk.decode("utf-8", "ignore").split("\n"):
+                        if _pl.startswith("data:"):
+                            _payload = _pl[5:].strip()
+                            if _payload and _payload != "[DONE]":
+                                _obj = json.loads(_payload)
+                                _peek_text += _extract_resp_text(_obj, is_chunk=True)
+                except Exception:
+                    pass
+                if _peek_text:
+                    _pok, _preason = quality_check(
+                        {"choices": [{"delta": {"content": _peek_text}}]}, is_chunk=True)
+                    if not _pok:
+                        try: await resp.aclose()
+                        except Exception: pass
+                        provider.total_errors += 1
+                        latency_ms = (time.time() - t_attempt) * 1000
+                        mark_model_error(provider.name, upstream_model, f"quality:{_preason}")
+                        update_model_stats(provider.name, upstream_model, "quality_rejected", latency_ms)
+                        log_history({"provider": provider.name, "model": upstream_model, "req_model": model,
+                                     "status": "error", "code": 0, "ms": latency_ms,
+                                     "err": f"quality:{_preason}", "proxy": provider.proxy or "direct",
+                                     "stream": True, "failover": True})
+                        errors.append(f"{provider.name}: quality={_preason} (stream failover)")
+                        break  # next provider candidate (inner retry loop)
 
                 # First byte in hand → commit. Real TTFT-based success stat.
                 DEAD_MODELS.pop(f"{provider.name}/{upstream_model}", None)
@@ -2327,7 +2937,13 @@ async def delete_provider(name: str, request: Request):
     # Combo yang routes-nya habis → hapus combo itu
     for c in [c for c in COMBOS if not COMBOS[c]["routes"]]:
         del COMBOS[c]
+    # Hapus models cache provider ini supaya tidak re-appear di restart/dashboard
+    p = PROVIDERS[name]
+    p.models = []
+    p.models_fetched_at = 0.0
+    _save_models_cache()
     del PROVIDERS[name]
+    DELETED_PROVIDERS.add(name)
     _save_config()
     return {"ok": True, "removed_from": removed_from}
 
@@ -2954,6 +3570,9 @@ def _sync_data_to_runtime(data: dict, replace_combos: bool = True) -> dict:
         name = p["name"]
         if not name or not p.get("base_url"):
             continue
+        # Skip providers user explicitly deleted — don't resurrect them
+        if name in DELETED_PROVIDERS:
+            continue
         if name in PROVIDERS:
             obj = PROVIDERS[name]
             # update non-empty fields only (tinggalkan health stats)
@@ -3269,6 +3888,7 @@ def _save_config():
         "providers": [p.to_dict(include_key=True) for p in PROVIDERS.values()],
         "proxies": [{"name": k, "url": v} for k, v in PROXIES.items()],
         "combos": [{"name": k, "routes": v["routes"], "strategy": v.get("strategy", "random")} for k, v in COMBOS.items()],
+        "deleted_providers": sorted(DELETED_PROVIDERS),
     }
     with open(CONFIG_PATH, "w") as f:
         yaml.safe_dump(cfg, f, sort_keys=False, allow_unicode=True)
