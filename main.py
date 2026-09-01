@@ -27,6 +27,9 @@ import vrouter_db
 
 CONFIG_PATH = os.environ.get("VROUTER_CONFIG", "/home/ubuntu/vrouter/config.yaml")
 DASHBOARD_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "dashboard.html")
+LANDING_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "landing.html")
+DOCS_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "docs.html")
+AUTH_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "auth.html")
 HISTORY_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "history.jsonl")
 BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
 MODELS_CACHE_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "models_cache.json")
@@ -1058,8 +1061,29 @@ def record_failed_attempt(ip: str):
 def clear_attempts(ip: str):
     LOGIN_ATTEMPTS.pop(ip, None)
 
-# --- Secure session tokens ---
-VALID_SESSIONS = set()  # set of active session tokens
+# --- Secure session tokens (persisted to file) ---
+SESSION_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.vr_sessions.json')
+
+def _load_sessions():
+    try:
+        if os.path.exists(SESSION_FILE):
+            with open(SESSION_FILE, 'r') as f:
+                data = json.load(f)
+                # Only keep sessions from last 7 days
+                now = time.time()
+                return {k: v for k, v in data.items() if v > now - 604800}
+    except Exception:
+        pass
+    return {}
+
+def _save_sessions():
+    try:
+        with open(SESSION_FILE, 'w') as f:
+            json.dump(VALID_SESSIONS, f)
+    except Exception:
+        pass
+
+VALID_SESSIONS = _load_sessions()  # dict of token -> created_at
 
 
 # ---------------------------------------------------------------------------
@@ -2554,6 +2578,39 @@ async def dashboard(request: Request):
     return HTMLResponse("<h1>dashboard.html missing</h1>")
 
 
+@app.get("/landing", response_class=HTMLResponse)
+async def landing(request: Request):
+    if os.path.exists(LANDING_PATH):
+        return FileResponse(LANDING_PATH, headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        })
+    return HTMLResponse("<h1>landing.html missing</h1>")
+
+
+@app.get("/docs", response_class=HTMLResponse)
+async def docs(request: Request):
+    if os.path.exists(DOCS_PATH):
+        return FileResponse(DOCS_PATH, headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        })
+    return HTMLResponse("<h1>docs.html missing</h1>")
+
+
+@app.get("/auth", response_class=HTMLResponse)
+async def auth(request: Request):
+    if os.path.exists(AUTH_PATH):
+        return FileResponse(AUTH_PATH, headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        })
+    return HTMLResponse("<h1>auth.html missing</h1>")
+
+
 @app.post("/api/login")
 async def login(request: Request, response: Response):
     ip = get_client_ip(request)
@@ -2561,7 +2618,8 @@ async def login(request: Request, response: Response):
     body = await request.json()
     if body.get("password") == DASH_PASS:
         token = secrets.token_urlsafe(32)
-        VALID_SESSIONS.add(token)
+        VALID_SESSIONS[token] = time.time()
+        _save_sessions()
         clear_attempts(ip)
         response.set_cookie("vr_token", token, httponly=True, max_age=86400 * 7, samesite="lax")
         return {"ok": True}
@@ -2573,7 +2631,8 @@ async def login(request: Request, response: Response):
 async def logout(request: Request, response: Response):
     token = request.cookies.get("vr_token")
     if token:
-        VALID_SESSIONS.discard(token)
+        VALID_SESSIONS.pop(token, None)
+        _save_sessions()
     response.delete_cookie("vr_token")
     return {"ok": True}
 

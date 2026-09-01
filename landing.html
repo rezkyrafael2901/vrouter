@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#08090a">
+<title>VRouter - OpenAI-Compatible LLM Router</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #08090a; --bg2: #0f1011; --bg3: #151719;
+  --card: #191a1b; --card2: #28282c;
+  --border: rgba(124,58,237,0.25); --border-strong: rgba(124,58,237,0.5);
+  --border-sub: rgba(255,255,255,0.05);
+  --text: #f7f8f8; --text2: #d0d6e0; --text3: #8a8f98; --text4: #62666d;
+  --accent: #7c3aed; --accent2: #8b5cf6; --accent-h: #a78bfa;
+  --teal: #06b7d4; --teal2: #22d3ee; --green: #34d399; --red: #f87171; --amber: #fbbf24;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Geist', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: "cv01", "ss03"; font-size: 15px; line-height: 1.6; letter-spacing: -0.1px;
+  -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased;
+}
+code, .mono { font-family: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--accent2); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* NAVBAR */
+.navbar { position: sticky; top: 0; z-index: 100; background: rgba(8,9,10,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.nav-left .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }
+.nav-left .logo-icon { font-size: 20px; }
+.nav-center { flex: 1; display: flex; justify-content: center; }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a { color: var(--text2); font-size: 14px; font-weight: 500; }
+.nav-links a:hover { color: var(--text); }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: 500; font-size: 14px; transition: all 0.2s ease; cursor: pointer; border: none; padding: 8px 16px; }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+/* HERO */
+.hero { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; padding: 80px 0 60px; align-items: center; }
+.hero-content h1 { font-size: 44px; font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
+.gradient-text { background: linear-gradient(135deg, var(--teal), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero-sub { font-size: 18px; color: var(--text2); margin: 20px 0 32px; max-width: 600px; }
+.hero-cta { display: flex; gap: 16px; margin-bottom: 32px; }
+.btn-lg { padding: 14px 28px; font-size: 16px; }
+.hero-stats { display: flex; gap: 32px; }
+.stat { display: flex; flex-direction: column; }
+.stat-num { font-size: 28px; font-weight: 700; color: var(--teal); }
+.stat-label { font-size: 13px; color: var(--text3); }
+.hero-visual { display: flex; justify-content: flex-end; }
+.hero-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+.hero-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+.hero-card-title { font-size: 13px; color: var(--text3); }
+.hero-code { font-size: 13px; line-height: 1.5; color: var(--text2); white-space: pre-wrap; }
+
+/* SECTIONS */
+.section { padding: 100px 0; }
+.section.alt { background: var(--bg2); }
+.section-header { text-align: center; margin-bottom: 60px; }
+.section-title { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+.section-sub { font-size: 16px; color: var(--text2); }
+.centered h2 { font-size: 36px; font-weight: 700; line-height: 1.1; }
+
+.features-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;
+}
+.feature-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; text-align: center; transition: transform 0.2s ease; }
+.feature-card:hover { transform: translateY(-4px); }
+.feature-icon { font-size: 40px; margin-bottom: 20px; }
+.feature-card h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+.feature-card p { font-size: 14px; color: var(--text2); }
+
+.integrations-grid { display: flex; flex-direction: column; gap: 24px; }
+.integration-title { font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
+.integration-logos { display: flex; flex-wrap: wrap; gap: 12px; }
+.integration-logo { background: var(--card2); border: 1px solid var(--border-sub); border-radius: 8px; padding: 8px 14px; font-size: 13px; color: var(--text2); }
+
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;
+}
+.pricing-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; text-align: center; }
+.pricing-card.popular { border-color: var(--accent); box-shadow: 0 0 40px rgba(124,58,237,0.15); }
+.pricing-header h3 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+.pricing-price { font-size: 42px; font-weight: 800; margin: 16px 0; }
+.pricing-period { font-size: 18px; font-weight: 400; color: var(--text3); }
+.pricing-desc { font-size: 14px; color: var(--text3); margin-bottom: 24px; }
+.pricing-features { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+.pricing-feature { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.check { color: var(--green); font-weight: 600; }
+.x { color: var(--text4); }
+.disabled { opacity: 0.5; }
+.pricing-card .btn { width: 100%; padding: 14px; font-size: 14px; }
+
+/* FOOTER */
+.footer { background: var(--bg3); border-top: 1px solid var(--border); padding: 60px 0 32px; font-size: 14px; }
+.footer-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px; }
+.footer-col h4 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--text); }
+.footer-col a { display: block; margin-bottom: 10px; color: var(--text2); }
+.footer-col a:hover { color: var(--text); }
+.footer-desc { font-size: 14px; color: var(--text3); margin-top: 12px; max-width: 320px; }
+.footer-bottom { padding-top: 32px; border-top: 1px solid var(--border-sub); text-align: center; color: var(--text3); font-size: 13px; }
+
+@media (max-width: 768px) {
+  .hero { grid-template-columns: 1fr; gap: 48px; }
+  .hero-content h1 { font-size: 32px; }
+  .hero-cta { flex-direction: column; }
+  .nav-center { display: none; }
+  .hero-stats { gap: 20px; }
+  .container { padding: 0 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="container">
+    <div class="nav-left">
+      <div class="logo">
+        <span class="logo-icon">🧭</span>
+        <span class="logo-text">VRouter</span>
+      </div>
+    </div>
+    <div class="nav-center">
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="/docs">Docs</a>
+        <a href="/status">Status</a>
+        <a href="#faq">FAQ</a>
+        <a href="/dashboard">Dashboard</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a href="/auth" class="btn btn-ghost">Sign In</a>
+      <a href="/auth?signup=true" class="btn btn-primary">Get Started</a>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <h1><span class="gradient-text">OpenAI-compatible LLM router.</span> One key. 300+ models. Zero config.</h1>
+    <p class="hero-sub">VRouter routes your API requests to the best AI model automatically — OpenAI Chat Completions format, 1000+ models across 30+ providers, with load balancing, fallbacks, and usage tracking built in.</p>
+    <div class="hero-cta">
+      <a href="/auth?signup=true" class="btn btn-primary btn-lg">Get API Key — Free Tier</a>
+      <a href="/docs" class="btn btn-ghost btn-lg">View Docs</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">1000+</span> <span class="stat-label">Models</span></div>
+      <div class="stat"><span class="stat-num">30+</span> <span class="stat-label">Providers</span></div>
+      <div class="stat"><span class="stat-num">99.9%</span> <span class="stat-label">Uptime</span></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-card">
+      <div class="hero-card-header">
+        <span class="dot"></span>
+        <span class="hero-card-title">curl https://vrouter.my.id/v1/chat/completions</span>
+      </div>
+      <pre class="hero-code"><code>{
+  "model": "gpt-4o",
+  "messages": [{"role": "user", "content": "Hello!"}]
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-header">
+      <h2>Powerful features for production AI apps</h2>
+      <p class="section-sub">Everything you need to build, deploy, and scale AI applications.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3>Auto-Routing</h3>
+        <p>Smart model selection based on provider health, latency, and cost.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>Load Balancing</h3>
+        <p>Distribute traffic across multiple providers with circuit breakers.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Usage Tracking</h3>
+        <p>Real-time token usage, costs, and latency metrics per model.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Zero Latency</h3>
+        <p>Edge-optimized routing with <10ms overhead.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔌</div>
+        <h3>OpenAI Compatible</h3>
+        <p>Drop-in replacement for OpenAI API — change one line, done.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔑</div>
+        <h3>Key Management</h3>
+        <p>Manage multiple provider keys with rotation and health checks.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INTEGRATIONS -->
+<section class="section alt" id="integrations">
+  <div class="container">
+    <div class="section-header">
+      <h2>Works with your favorite tools</h2>
+      <p class="section-sub">Pre-built integrations for every stage of your AI workflow.</p>
+    </div>
+    <div class="integrations-grid">
+      <div class="integration-category">
+        <h3 class="integration-title">Development</h3>
+        <div class="integration-logos">
+          <span class="integration-logo">OpenAI</span>
+          <span class="integration-logo">LangChain</span>
+          <span class="integration-logo">Vercel</span>
+          <span class="integration-logo">Next.js</span>
+          <span class="integration-logo">Cursor</span>
+          <span class="integration-logo">Windsurf</span>
+        </div>
+      </div>
+      <div class="integration-category">
+        <h3 class="integration-title">AI Libraries</h3>
+        <div class="integration-logos">
+          <span class="integration-logo">LlamaIndex</span>
+          <span class="integration-logo">OpenRouter</span>
+          <span class="integration-logo">Anthropic</span>
+          <span class="integration-logo">Google AI</span>
+          <span class="integration-logo">GROQ</span>
+          <span class="integration-logo">Together</span>
+        </div>
+      </div>
+      <div class="integration-category">
+        <h3 class="integration-title">Deployment</h3>
+        <div class="integration-logos">
+          <span class="integration-logo">Docker</span>
+          <span class="integration-logo">Railway</span>
+          <span class="integration-logo">Fly.io</span>
+          <span class="integration-logo">Cloudflare</span>
+          <span class="integration-logo">Vercel</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <h2>Simple, transparent pricing</h2>
+      <p class="section-sub">Start free. Pay as you grow. No hidden fees.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="pricing-header">
+          <h3>Free</h3>
+          <p class="pricing-price">$0<span class="pricing-period">/mo</span></p>
+          <p class="pricing-desc">For hobbyists and testing</p>
+        </div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><span class="check">✓</span> 10K tokens/day free</div>
+          <div class="pricing-feature"><span class="check">✓</span> All public models</div>
+          <div class="pricing-feature"><span class="check">✓</span> Basic routing</div>
+          <div class="pricing-feature disabled"><span class="x">✗</span> Load balancing</div>
+          <div class="pricing-feature disabled"><span class="x">✗</span> Custom keys</div>
+        </div>
+        <a href="/auth?signup=true" class="btn btn-ghost">Get Started</a>
+      </div>
+      <div class="pricing-card popular">
+        <div class="pricing-header">
+          <h3>Pro</h3>
+          <p class="pricing-price">$9<span class="pricing-period">/mo</span></p>
+          <p class="pricing-desc">For teams and production</p>
+        </div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><span class="check">✓</span> 1M tokens/day included</div>
+          <div class="pricing-feature"><span class="check">✓</span> All models + gated</div>
+          <div class="pricing-feature"><span class="check">✓</span> Auto load balancing</div>
+          <div class="pricing-feature"><span class="check">✓</span> Custom provider keys</div>
+          <div class="pricing-feature"><span class="check">✓</span> Priority support</div>
+        </div>
+        <a href="/auth?signup=true" class="btn btn-primary">Get Pro</a>
+      </div>
+      <div class="pricing-card">
+        <div class="pricing-header">
+          <h3>Business</h3>
+          <p class="pricing-price">Custom</p>
+          <p class="pricing-desc">For enterprises and high volume</p>
+        </div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><span class="check">✓</span> Unlimited usage</div>
+          <div class="pricing-feature"><span class="check">✓</span> Dedicated instances</div>
+          <div class="pricing-feature"><span class="check">✓</span> Custom SLAs</div>
+          <div class="pricing-feature"><span class="check">✓</span> SSO / SAML</div>
+          <div class="pricing-feature"><span class="check">✓</span> 24/7 support</div>
+        </div>
+        <a href="mailto:viresen16@gmail.com" class="btn btn-ghost">Contact Sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-col">
+        <div class="logo">
+          <span class="logo-icon">🧭</span>
+          <span class="logo-text">VRouter</span>
+        </div>
+        <p class="footer-desc">OpenAI-compatible LLM router with 1000+ models across 30+ providers.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="/docs">Docs</a>
+        <a href="/auth">Sign In</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="mailto:viresen16@gmail.com">Contact</a>
+        <a href="https://github.com/rezkyrafael2901/vrouter">GitHub</a>
+        <a href="https://t.me/virexagent">Telegram</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 VRouter. Built in Indonesia. · <a href="/auth">Admin Login</a></p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
