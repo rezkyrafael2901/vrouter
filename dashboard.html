@@ -3025,87 +3025,47 @@ function enterSelectMode(name) {
   }
 }
 function setupProxyLongPress() {
-  var list = document.getElementById('proxiesList');
-  if (!list) return;
-  // Helper: start long press timer
-  function startLongPress(card) {
-    if (!card || card.closest('.btn')) return;
+  // Use contextmenu event — native long-press detection on mobile browsers
+  // No custom timer, no passive:false conflicts, works across all mobile browsers
+  document.documentElement.addEventListener('contextmenu', function(e) {
+    var card = e.target.closest && e.target.closest('.proxy-card');
+    if (!card) return;
+    e.preventDefault();
     var name = card.dataset.proxy;
     if (!name) return;
-    card._longPressTimer = setTimeout(function() {
-      card._longPressTriggered = true;
-      navigator.vibrate && navigator.vibrate(30);
-      enterSelectMode(name);
-    }, 500);
-  }
-  function cancelLongPress(card) {
-    if (card) { clearTimeout(card._longPressTimer); }
-  }
-  function handleTap(card, e) {
+    navigator.vibrate && navigator.vibrate(30);
+    enterSelectMode(name);
+  });
+  // Mouse right-click (desktop) — same behavior
+  document.documentElement.addEventListener('mousedown', function(e) {
+    if (e.button !== 2) return; // right click only
+    var card = e.target.closest && e.target.closest('.proxy-card');
     if (!card) return;
-    if (card._longPressTriggered) {
-      card._longPressTriggered = false;
-      if (e) e.preventDefault();
-      return true; // consumed
-    }
-    if (proxySelectMode) {
-      var name = card.dataset.proxy;
-      var cb = card.querySelector('.proxy-cb');
-      if (cb) {
-        var isChecked = selectedProxies.has(name);
-        if (isChecked) { selectedProxies.delete(name); cb.checked = false; card.classList.remove('selected'); }
-        else { selectedProxies.add(name); cb.checked = true; card.classList.add('selected'); }
-        updateBulkProxyActions();
-        if (selectedProxies.size === 0) clearProxySelection();
-      }
-      if (e) e.preventDefault();
-      return true;
-    }
-    return false;
-  }
-  // Touch events (mobile)
-  list.addEventListener('touchstart', function(e) {
-    var card = e.target.closest('.proxy-card');
-    if (card) startLongPress(card);
-  }, { passive: true });
-  list.addEventListener('touchend', function(e) {
-    var card = e.target.closest('.proxy-card');
-    if (card) cancelLongPress(card);
-    if (!handleTap(card, e) && proxySelectMode && card) {
-      // Don't propagate to click handler
-    }
-  }, { passive: false });
-  list.addEventListener('touchmove', function(e) {
-    var card = e.target.closest('.proxy-card');
-    if (card) { cancelLongPress(card); card._longPressTriggered = false; }
-  }, { passive: true });
-  // Mouse events (desktop) — mousedown starts timer, mouseup ends it
-  list.addEventListener('mousedown', function(e) {
-    if (e.button !== 0) return; // left click only
-    var card = e.target.closest('.proxy-card');
-    if (card) startLongPress(card);
+    e.preventDefault();
+    var name = card.dataset.proxy;
+    if (!name) return;
+    enterSelectMode(name);
   });
-  list.addEventListener('mouseup', function(e) {
-    var card = e.target.closest('.proxy-card');
-    if (card) cancelLongPress(card);
+  // Prevent default context menu on proxy cards
+  document.documentElement.addEventListener('contextmenu', function(e) {
+    if (e.target.closest && e.target.closest('.proxy-card')) e.preventDefault();
   });
-  list.addEventListener('mousemove', function(e) {
-    var card = e.target.closest('.proxy-card');
-    if (card && card._longPressTimer) {
-      // Cancel if mouse moved too far
-      cancelLongPress(card);
-      card._longPressTriggered = false;
-    }
-  });
-  // Click — handles selection toggle on desktop (mouseup already cleared timer)
-  list.addEventListener('click', function(e) {
-    var card = e.target.closest('.proxy-card');
+  // Tap to toggle selection while in select mode (mobile + desktop click)
+  document.documentElement.addEventListener('click', function(e) {
+    if (!proxySelectMode) return;
+    var card = e.target.closest && e.target.closest('.proxy-card');
     if (!card || e.target.closest('.btn')) return;
-    handleTap(card, e);
-  });
-  // Prevent text selection during long press on desktop
-  list.addEventListener('selectstart', function(e) {
-    if (e.target.closest('.proxy-card')) e.preventDefault();
+    var name = card.dataset.proxy;
+    if (!name) return;
+    var cb = card.querySelector('.proxy-cb');
+    if (cb) {
+      var isChecked = selectedProxies.has(name);
+      if (isChecked) { selectedProxies.delete(name); cb.checked = false; card.classList.remove('selected'); }
+      else { selectedProxies.add(name); cb.checked = true; card.classList.add('selected'); }
+      updateBulkProxyActions();
+      if (selectedProxies.size === 0) clearProxySelection();
+    }
+    e.preventDefault();
   });
 }
 // Auto-init long-press handler
