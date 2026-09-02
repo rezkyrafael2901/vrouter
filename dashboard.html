@@ -2992,7 +2992,7 @@ function clearProxySelection() {
 function bulkDeleteProxies() {
   if (!selectedProxies.size) return;
   var names = Array.from(selectedProxies);
-  vconfirm({type:'delete',title:'Delete ' + names.length + ' Proxy(ies)',message:names.join(', '),okText:'Delete All'}).then(function(c) {
+  vconfirm({type:'delete',title:'Delete Proxies',message:names.length + ' proxy will be removed',okText:'Delete All'}).then(function(c) {
     if (!c) return;
     var promises = names.map(function(name) { return api('/api/proxies/' + encodeURIComponent(name), 'DELETE'); });
     Promise.all(promises).then(function() { toast(names.length + ' proxy(ies) deleted'); clearProxySelection(); loadAll(); }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
