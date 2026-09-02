@@ -3370,12 +3370,25 @@ async def update_provider_alias(name: str, request: Request):
 
 @app.put("/api/providers/{name}")
 async def update_provider(name: str, request: Request):
-    """Edit provider: base_url, prefix, default_model, proxy, weight, keys, manual_models."""
+    """Edit provider: base_url, prefix, default_model, proxy, weight, keys, manual_models, rename."""
     check_dashboard_auth(request)
     p = PROVIDERS.get(name)
     if not p:
         raise HTTPException(404, "Provider not found")
     body = await request.json()
+    # Rename support: new_name != current name
+    new_name = body.get("new_name")
+    if new_name and new_name.strip() and new_name.strip() != name:
+        new_name = new_name.strip()
+        if new_name in PROVIDERS and new_name != name:
+            raise HTTPException(409, f"Provider '{new_name}' already exists")
+        # Re-key in runtime dict
+        PROVIDERS[new_name] = PROVIDERS.pop(name)
+        p = PROVIDERS[new_name]
+        p.name = new_name
+        # Re-map model cost overrides
+        if name in PROVIDER_MODEL_COSTS:
+            PROVIDER_MODEL_COSTS[new_name] = PROVIDER_MODEL_COSTS.pop(name)
     # Update fields if provided
     if "base_url" in body:
         p.base_url = body["base_url"].rstrip("/")
@@ -3465,6 +3478,14 @@ async def patch_combo(name: str, request: Request):
     if name not in COMBOS:
         raise HTTPException(404, "Combo not found")
     body = await request.json()
+    # Rename support: new_name != current name
+    new_name = body.get("new_name")
+    if new_name and new_name.strip() and new_name.strip() != name:
+        new_name = new_name.strip()
+        if new_name in COMBOS:
+            raise HTTPException(409, f"Combo '{new_name}' already exists")
+        COMBOS[new_name] = COMBOS.pop(name)
+        name = new_name
     strategy = body.get("strategy")
     routes = body.get("routes")
     if strategy is not None:

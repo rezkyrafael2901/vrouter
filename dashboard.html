@@ -1582,7 +1582,7 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
   <div class="modal">
     <div class="modal-h"><div class="modal-title">Edit Provider</div><button class="btn btn-xs" onclick="closeModal('editProviderModal')">×</button></div>
     <div class="modal-b">
-      <input type="hidden" id="epName">
+      <div class="form-group"><label class="form-label">Provider Name</label><input type="text" class="form-input" id="epName" placeholder="my-provider"></div>
       <div class="form-group"><label class="form-label">Base URL</label><input type="text" class="form-input" id="epUrl" placeholder="https://api.example.com/v1"></div>
       <div class="form-group"><label class="form-label">Prefix</label><input type="text" class="form-input" id="epPrefix" placeholder="xkiro"></div>
       <div class="form-group"><label class="form-label">Default Model</label><input type="text" class="form-input" id="epModel" placeholder="deepseek-v4-flash"></div>
@@ -2391,9 +2391,11 @@ function deleteProvider(name){
 
 function openProviderModal(){$('pName').value='';$('pUrl').value='';$('pKey').value='';$('pPrefix').value='';$('pModel').value='';$('pProxy').value='';$('providerModal').classList.remove('hidden')}
 
+let _editOrigName='';
 function editProvider(name){
   const p=(state.providers||[]).find(x=>x.name===name);
   if(!p){toast('Provider not found','err');return}
+  _editOrigName=p.name;
   $('epName').value=p.name;
   $('epUrl').value=p.base_url||'';
   $('epPrefix').value=p.prefix||'';
@@ -2423,10 +2425,13 @@ function saveEditProvider(){
     proxy:$('epProxy').value.trim(),
     weight:parseInt($('epWeight').value)||5
   };
+  // Send new_name if renamed (back-end handles re-key). URL uses ORIGINAL name.
+  body['new_name']=name;
+  const url=encodeURIComponent(_editOrigName||name);
   // Only update keys if user typed something
   const keysRaw=$('epKeys').value.trim();
   if(keysRaw){body.keys=keysRaw.split('\n').map(k=>k.trim()).filter(Boolean)}
-  api('/api/providers/'+encodeURIComponent(name),'PUT',body)
+  api('/api/providers/'+url,'PUT',body)
     .then(()=>{closeModal('editProviderModal');toast('Updated');loadAll()})
     .catch(e=>toast(e.message,'err'));
 }
@@ -2520,7 +2525,9 @@ function saveProvider(){
 }
 
 let _cmbRowSeq=0;
+let _cmbOrigName='';
 function openComboModal(name){
+  _cmbOrigName=name||'';
   $('cmbName').value=name||'';
   $('cmbStrategy').value='fallback';
   $('cmbRoutes').innerHTML='';
@@ -2638,10 +2645,14 @@ function saveCombo(){
     if(inputs[0].value&&inputs[1].value)routes.push({provider:inputs[0].value,model:inputs[1].value});
   });
   if(!name||!routes.length){toast('Name + route required','err');return}
-  const isEdit=(state.combos||[]).some(c=>c.name===name);
-  const path=isEdit?`/api/combos/${encodeURIComponent(name)}`:'/api/combos';
+  // Edit jika ada combo dengan NAMA ASLI (yang dibuka modal). Rename = edit ke nama baru.
+  const isEdit=!!(_cmbOrigName&&(state.combos||[]).some(c=>c.name===_cmbOrigName));
+  const path=isEdit?`/api/combos/${encodeURIComponent(_cmbOrigName)}`:'/api/combos';
   const method=isEdit?'PATCH':'POST';
-  api(path,method,{name,routes,strategy})
+  const body={name,routes,strategy};
+  // Kalau rename, kirim new_name ke backend
+  if(isEdit&&name!==_cmbOrigName){body.new_name=name}
+  api(path,method,body)
     .then(()=>{closeModal('comboModal');toast(isEdit?'Combo updated':'Combo created');loadAll()})
     .catch(e=>toast(e.message,'err'));
 }
