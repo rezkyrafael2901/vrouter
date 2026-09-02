@@ -177,12 +177,20 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
   padding: 10px 16px; position: sticky; top: 0; z-index: 50;
   min-height: 60px; gap: 12px;
 }
-.header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.menu-btn { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 8px; }
+.header-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.menu-btn { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 8px; flex-shrink: 0; }
 .header-title { font-size: 17px; font-weight: 640; letter-spacing: -0.4px; line-height: 1.2; }
-.header-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.header-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-
+.header-sub { display: none; }
+.header-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; margin-left: auto; }
+.icon-btn {
+  background: none; border: 1px solid var(--border); border-radius: 8px;
+  width: 36px; height: 36px; padding: 0; display: flex; align-items: center;
+  justify-content: center; cursor: pointer; color: var(--text3); font-size: 14px;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.icon-btn:hover { background: var(--card2); color: var(--text); border-color: var(--accent-h); }
+.icon-btn.svg-icon,
+.icon-btn > svg { width: 16px; height: 16px; }
 /* ═══ MAIN ═══ */
 .main { margin-left: 0; min-height: 100vh; }
 .content { padding: 20px 16px; padding-bottom: 96px; max-width: 100%; overflow-x: hidden; }
@@ -502,7 +510,7 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .chart-card{background:var(--card);border:1px solid var(--border-sub);border-radius:16px;padding:18px;position:relative;overflow:hidden;transition:all .25s cubic-bezier(.4,0,.2,1)}
 .chart-card:hover{box-shadow:0 4px 20px rgba(84,69,203,.06);transform:translateY(-1px)}
 .stat{transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
-.stat:hover{border-color:rgba(84,69,203,.15);box-shadow:0 8px 30px rgba(84,69,203,.08);transform:translateY(-2px)}
+.kpi-card:hover{border-color:rgba(84,69,203,.2);box-shadow:0 4px 20px rgba(84,69,203,.08);transform:translateY(-2px)}
 
 /* Proxy Select All */
 .proxy-select-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card2);border:1px solid var(--border-sub);border-radius:12px;margin-bottom:10px}
@@ -513,10 +521,15 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .proxy-card-inner{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
 .proxy-card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 
-/* Custom Confirm Modal — centered */
+/* Custom Confirm Modal — centered + bounce */
 #confirmModal{align-items:center!important;justify-content:center}
-@keyframes confirmSlideIn{from{transform:translateY(20px) scale(.95);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
-#confirmModal .modal{animation:confirmSlideIn .25s cubic-bezier(.16,1,.3,1);border-radius:16px;border:1px solid var(--border);width:90%;max-width:400px;max-height:none}
+@keyframes confirmBounce{
+  0%{transform:translateY(0) scale(.5);opacity:0}
+  55%{transform:translateY(-6px) scale(1.05);opacity:1}
+  75%{transform:translateY(2px) scale(.97)}
+  100%{transform:translateY(0) scale(1);opacity:1}
+}
+#confirmModal .modal{animation:confirmBounce .4s cubic-bezier(.34,1.56,.64,1);border-radius:16px;border:1px solid var(--border);width:90%;max-width:400px;max-height:none}
 
 @media (min-width: 769px) {
   .sidebar { transform: translateX(0); }
@@ -529,6 +542,10 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
   .modal { max-width: 540px; border-radius: 18px; border: 1px solid var(--border); border-bottom: 1px solid var(--border); align-self: center; }
   .modal-bg { align-items: center; }
 }
+
+/* Provider Status Table */
+.health-table td { padding: 10px 8px; font-size: 13px; }
+.health-table td .badge { font-size: 11px; }
 
 /* ═══ RESPONSIVE — MOBILE ═══ */
 @media (max-width: 768px) {
@@ -1087,10 +1104,10 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section">
-        <div class="nav-label">Overview</div>
+        <div class="nav-label">Dashboard</div>
         <div class="nav-item" id="nav-admin" onclick="navTo('admin')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg><span>Admin Panel</span></div>
-        <div class="nav-item active" id="nav-endpoint" onclick="navTo('endpoint')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>Dashboard</div>
-        <div class="nav-item" id="nav-health" onclick="navTo('health')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</div>
+        <div class="nav-item active" id="nav-endpoint" onclick="navTo('endpoint')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>Overview</div>
+        <div class="nav-item" id="nav-health" onclick="navTo('health')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Provider Status</div>
       </div>
       <div class="nav-section">
         <div class="nav-label">Config</div>
@@ -1119,9 +1136,6 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
       </div>
     </nav>
     <div class="sidebar-footer">
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme"></button>
-      </div>
       <div class="status-bar">
         <span><span class="dot"></span>Online</span>
         <button class="btn btn-xs btn-danger" onclick="logout()">Exit</button>
@@ -1143,8 +1157,10 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
         </div>
       </div>
       <div class="header-right">
-        <button class="btn" onclick="loadAll(true)"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>Refresh</button>
-        <button class="btn btn-primary" onclick="testHealthCheck()"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</button>
+              <button class="icon-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" style="width:36px;height:36px;padding:0;border-radius:8px;"></button>
+              <button class="icon-btn" onclick="testHealthCheck()" title="Health" style="width:36px;height:36px;padding:0;border-radius:8px;">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </button>
       </div>
     </header>
 
@@ -1152,7 +1168,6 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
       <!-- DASHBOARD -->
       <div id="panel-endpoint" class="panel">
         <div class="kpi-row" id="kpiRow"></div>
-        <div class="stats" id="statsGrid"></div>
         <!-- ACTIVITY FEED -->
         <div class="activity-feed">
           <div class="activity-header"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px;color:var(--accent-h)"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> Recent Activity</div>
@@ -1219,14 +1234,15 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
         </table></div></div></div>
       </div>
 
-      <!-- HEALTH -->
+      <!-- PROVIDER STATUS -->
       <div id="panel-health" class="panel hidden">
-        <div class="section-header"><div><div class="section-title">Health</div><div class="section-sub">Real-time status</div></div>
-          <button class="btn" onclick="loadProviderHealth()">Refresh</button>
+        <div class="section-header"><div><div class="section-title">Provider Status</div><div class="section-sub">Real-time provider health</div></div>
+          <button class="btn" onclick="loadProviderHealth()" style="float:right">Refresh</button>
+          <div style="clear:both"></div>
         </div>
         <div class="card"><div class="card-body"><div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>Provider</th><th>Status</th><th>Req</th><th>Err</th><th>Rate</th><th>Latency</th></tr></thead>
-          <tbody id="healthBody"><tr><td colspan="6" style="text-align:center;color:var(--text3)">Loading...</td></tr></tbody>
+          <thead><tr><th>Provider</th><th>Status</th><th>Requests</th><th>Errors</th><th>Success Rate</th><th>Avg Latency</th></tr></thead>
+          <tbody id="healthBody"><tr><td colspan="6" style="text-align:center;color:var(--text3)">Loading…</td></tr></tbody>
         </table></div></div></div>
       </div>
 
@@ -1712,7 +1728,7 @@ function ptrRelease(){
 
 // SKELETON RENDERERS
 function renderDashboardSkel(){
-  document.getElementById('statsGrid').innerHTML=Array(4).fill(0).map(function(){return '<div class="skel-stat"><div class="skel skel-line lg"></div><div class="skel skel-line sm" style="margin-top:10px"></div></div>';}).join('');
+  document.getElementById('kpiRow').innerHTML=Array(6).fill(0).map(function(){return '<div class="skel-stat"><div class="skel skel-line lg"></div><div class="skel skel-line sm" style="margin-top:10px"></div></div>';}).join('');
 }
 function renderProvidersSkel(){
   document.getElementById('providersGrid').innerHTML=Array(5).fill(0).map(function(){return '<div class="skel-card"><div class="skel-row"><div class="skel skel-avatar"></div><div style="flex:1"><div class="skel skel-line lg"></div><div class="skel skel-line sm"></div></div></div><div class="skel skel-line" style="width:80%;margin-top:10px"></div><div class="skel skel-line" style="width:60%;margin-top:6px"></div></div>';}).join('');
@@ -1845,51 +1861,40 @@ function renderDashboard(){
   const allSeries=Object.values(s.latency_series||{});
   const flatLat=allSeries.flat();
   const avgLat=flatLat.length?Math.round(flatLat.reduce((a,b)=>a+b,0)/flatLat.length):0;
-  const stats=[
-    {label:'Providers',val:s.total_providers||0,cls:'',ico:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zM2 14a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></svg>',spark:sparklineMini(flatLat.slice(-30))},
-    {label:'Healthy',val:s.healthy_providers||0,cls:'green',ico:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>'},
-    {label:'Unhealthy',val:s.unhealthy_providers||0,cls:'red',ico:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>'},
-    {label:'Requests',val:fmtNum(s.total_requests||0),cls:'purple',ico:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>'},
-    {label:'Tokens In ↑',val:fmtNum(t.in),cls:'orange',sub:'today '+fmtNum(d.in),ico:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5M5 12l7-7 7 7"/></svg>'},
-    {label:'Tokens Out ↓',val:fmtNum(t.out),cls:'green',sub:'today '+fmtNum(d.out),ico:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M19 12l-7 7-7-7"/></svg>'},
-    {label:'Est. Cost',val:fmtCost(t.cost),cls:'purple',sub:'today '+fmtCost(d.cost),ico:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',spark:costGaugeBar(t.cost,d.cost)},
+
+  // Merged KPI cards — 6 unique, KPI style with Stats Grid icons
+  var kpis=[
+    {label:'Providers',value:s.total_providers||0,color:'#5445cb',
+     icon:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zM2 14a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></svg>',
+     sub:'active upstreams',spark:''},
+    {label:'Success Rate',value:successRate+'%',color:'#34D399',
+     icon:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+     sub:'all time',spark:''},
+    {label:'Requests',value:fmtNum(s.total_requests||0),color:'#8b5cf6',
+     icon:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+     sub:'all time',spark:''},
+    {label:'Tokens In',value:fmtNum(t.in||0),color:'#4695fe',
+     icon:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5M5 12l7-7 7 7"/></svg>',
+     sub:'today '+fmtNum(d.in||0),spark:''},
+    {label:'Tokens Out',value:fmtNum(t.out||0),color:'#34D399',
+     icon:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M19 12l-7 7-7-7"/></svg>',
+     sub:'today '+fmtNum(d.out||0),spark:''},
+    {label:'Est. Cost',value:fmtCost(t.cost||0),color:'#8b5cf6',
+     icon:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+     sub:'today '+fmtCost(d.cost||0),spark:costGaugeBar(t.cost,d.cost)},
+    {label:'Latency Summary',value:Math.round(avgLat||0)+'ms',color:'#8b5cf6',
+     icon:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+     sub:'avg '+Math.round(avgLat||0)+'ms',spark:''}
   ];
-    var kpiContainer = document.getElementById('kpiRow');
-  if (kpiContainer) {
-    kpiContainer.innerHTML = renderKPIRow();
-    var allSeriesKpi = Object.values(s.latency_series || {});
-    var flatLatKpi = allSeriesKpi.flat();
-    var latDataKpi = flatLatKpi.slice(-20);
-    var costDataKpi = [t.cost || 0];
-    for (var ci = 0; ci < 3; ci++) costDataKpi.unshift(costDataKpi[0] * (0.7 + Math.random() * 0.3));
-    setTimeout(function() {
-      chartSparkline('kpi-spark-0', latDataKpi, '#5445cb');
-      chartSparkline('kpi-spark-1', latDataKpi.slice(-15), '#34D399');
-      chartSparkline('kpi-spark-2', latDataKpi.slice(-12), '#4695fe');
-      chartSparkline('kpi-spark-3', costDataKpi, '#8b5cf6');
-    }, 50);
-  }
-  $('statsGrid').innerHTML=stats.map(st=>`
-    <div class="stat ${st.cls}">
-      <div class="stat-ico">${st.ico}</div>
-      <div class="stat-lbl">${st.label}</div>
-      <div class="stat-val">${st.val}</div>
-      ${st.sub?`<div class="stat-sub">${st.sub}</div>`:''}
-      ${st.spark?`<div class="sparkline-stat">${st.spark}</div>`:''}
-    </div>
-  `).join('');
+
+  // Render KPI cards
+  $('kpiRow').innerHTML=kpis.map(function(k,i){
+    return '<div class="kpi-card"><div class="kpi-icon" style="background:'+k.color+'11;color:'+k.color+'">'+k.icon+'</div><div class="kpi-info"><div class="kpi-label">'+k.label+'</div><div class="kpi-value" style="color:'+k.color+'">'+k.value+'</div><div class="kpi-sub">'+k.sub+'</div></div></div>';
+  }).join('');
+
   renderActivityFeed();
   renderProgressRing(successRate,100-successRate,successColor);
-  // Add latency summary after stats grid
-  const latCard=latencySummaryCard();
-  if(latCard){
-    const sg=$('statsGrid');
-    if(sg.innerHTML.indexOf('Latency Summary')===-1){
-      sg.innerHTML+=latCard;
-    }
-  }
 }
-
 function sparkline(series){
   if(!series||series.length<2)return '';
   const w=140,h=28,pad=2;
@@ -2009,6 +2014,35 @@ function renderProgressRing(success, error, color){
         </div>
       </div>
     </div>`;
+}
+
+/* Provider Status Table Loader */
+function loadProviderHealth(){
+  api('/api/status','GET').then(d=>{
+    const el=$('healthBody');
+    if(!el)return;
+    const provs=(d.providers||[])
+      .filter(p=>p.name!=='Meta AI (Cupang Test)');
+    let html='';
+    provs.forEach(p=>{
+      const ok=(p.total_requests||0)-(p.total_errors||0);
+      const sr=ok>0?Math.round((ok/(p.total_requests||1))*100):100;
+      const lat=(state.latency_series||{})[p.name]||[];
+      const avgLat=lat.length?Math.round(lat.reduce((a,b)=>a+b,0)/lat.length):0;
+      const badgeCls=p.healthy?'badge-green':'badge-red';
+      const badgeText=p.healthy?'Healthy':'Down';
+      html+=`<tr>
+        <td>${esc(p.name)}</td>
+        <td><span class="badge ${badgeCls}"><span class="badge-dot"></span>${badgeText}</span></td>
+        <td>${(p.total_requests||0).toLocaleString()}</td>
+        <td>${(p.total_errors||0).toLocaleString()}</td>
+        <td>${sr}%</td>
+        <td>${avgLat}ms</td>
+      </tr>`;
+    });
+    if(!provs.length)html='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No providers configured</td></tr>';
+    el.innerHTML=html;
+  }).catch(e=>{const el=$('healthBody');if(el)el.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--err)">Load failed: '+esc(e.message)+'</td></tr>';});
 }
 
 function renderProviders(){
@@ -2275,25 +2309,26 @@ function navTo(page){
   const panel=$('panel-'+page);
   if(panel)panel.classList.remove('hidden');
   const titles={
-    endpoint:['Dashboard','Overview · real-time status'],
-    health:['Health','Overview · provider connectivity'],
-    providers:['Providers','Config · API connections'],
-    combos:['Combos','Config · routing strategies'],
-    proxies:['Proxies','Config · proxy pools'],
-    modelstats:['Model Stats','Analytics · performance'],
-    healthscore:['Health Score','Analytics · composite 0-100'],
-    costs:['Costs','Analytics · estimated USD spend'],
-    tokspeed:['Tok/s Meter','Analytics · streaming throughput'],
-    circuits:['Circuit Breakers','Analytics · fault isolation'],
-    usagelogs:['Usage Logs','Analytics · detailed request audit'],
-    liverequests:['Live Requests','Analytics · real-time feed'],
-    modelinsights:['Model Insights','Analytics · per-model metrics'],
-    hourlytraffic:['Hourly Traffic','Analytics · requests per hour'],
-    alerts:['Alerts','Analytics · threshold breaches'],
-    budget:['Budget Tracker','Analytics · cost monitoring'],
-    charts:['Charts','Analytics · visual analytics'],
-    admin:['Admin Panel','Control · model management'],
-    settings:['Settings','System · configuration']
+    endpoint:['Overview',''],
+    dashboard:['Dashboard',''],
+    health:['Provider Status',''],
+    providers:['Providers',''],
+    combos:['Combos',''],
+    proxies:['Proxies',''],
+    modelstats:['Model Stats',''],
+    healthscore:['Health Score',''],
+    costs:['Costs',''],
+    tokspeed:['Tok/s Meter',''],
+    circuits:['Circuit Breakers',''],
+    usagelogs:['Usage Logs',''],
+    liverequests:['Live Requests',''],
+    modelinsights:['Model Insights',''],
+    hourlytraffic:['Hourly Traffic',''],
+    alerts:['Alerts',''],
+    budget:['Budget Tracker',''],
+    charts:['Charts',''],
+    admin:['Admin Panel',''],
+    settings:['Settings',''],
   };
   if(titles[page])$('pageTitle').textContent=titles[page][0];
   if($('pageSub'))$('pageSub').textContent=titles[page][1]||'';
@@ -2860,21 +2895,7 @@ function chartSparkline(canvasId, data, color) {
 }
 
 /* KPI Row */
-function renderKPIRow() {
-  var s = state; var agg = s.agg || { total: {}, today: {} }; var t = agg.total || {}, d = agg.today || {};
-  var totalReq = (t.ok || 0) + (s.total_errors || 0);
-  var successRate = totalReq > 0 ? Math.round(((t.ok || 0) / totalReq) * 100) : 100;
-  var kpis = [
-    { label: 'Total Requests', value: fmtNum(s.total_requests || 0), color: '#5445cb', sub: 'all time' },
-    { label: 'Success Rate', value: successRate + '%', color: successRate >= 95 ? '#34D399' : '#FBBF24', sub: 'uptime' },
-    { label: 'Tokens In', value: fmtNum(t.in || 0), color: '#4695fe', sub: 'today ' + fmtNum(d.in || 0) },
-    { label: 'Est. Cost', value: fmtCost(t.cost || 0), color: '#8b5cf6', sub: 'today ' + fmtCost(d.cost || 0) }
-  ];
-  return kpis.map(function(k, i) {
-    return '<div class="kpi-card"><div class="kpi-icon" style="background:' + k.color + '11;color:' + k.color + '"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="10"/></svg></div><div class="kpi-info"><div class="kpi-label">' + k.label + '</div><div class="kpi-value">' + k.value + '</div><div class="kpi-sub">' + k.sub + '</div></div><div class="kpi-spark"><canvas id="kpi-spark-' + i + '" width="56" height="32"></canvas></div></div>';
-  }).join('');
-}
-
+/* KPI Row merged into renderDashboard() */
 /* Custom Confirm Modal */
 var confirmResolve = function() {};
 var _confirmBound = false;
