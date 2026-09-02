@@ -21,12 +21,20 @@ import uvicorn
 import yaml
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.templating import Jinja2Templates
+import sqlite3
+from pathlib import Path
 
 import sync_9router
 import vrouter_db
 
 CONFIG_PATH = os.environ.get("VROUTER_CONFIG", "/home/ubuntu/vrouter/config.yaml")
 DASHBOARD_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "dashboard.html")
+ADMIN_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "admin.html")
+PUBLIC_DB_PATH = "/home/ubuntu/vrouter-public/public.db"
+SITE_NAME = "VRouter"
+SITE_URL = "https://vrouter.my.id"
+templates = Jinja2Templates(directory=os.path.dirname(CONFIG_PATH))
 LANDING_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "landing.html")
 DOCS_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "docs.html")
 AUTH_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "auth.html")
@@ -3956,6 +3964,304 @@ def _save_config():
         vrouter_db.save_snapshot(PROVIDERS, PROXIES, COMBOS)
     except Exception:
         pass
+
+
+
+# ═══════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════
+# ADMIN LOGIN (console.vrouter.my.id — reads public.db)
+# ═══════════════════════════════════════════════════════════════════
+
+@app.post("/admin/login")
+async def admin_login(request: Request):
+    """Login via email + password (from public.db users table)."""
+    body = await request.json()
+    email = body.get("email", "").strip().lower()
+    password = body.get("password", "")
+
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password required")
+
+    db = _admin_db()
+    user = db.execute("SELECT id, email, password_hash, role, is_admin FROM users WHERE email=?", (email,)).fetchone()
+    db.close()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Verify password
+    stored = user["password_hash"]
+    if stored:
+        import hashlib as _hl
+        try:
+            salt, h = stored.split(":", 1)
+            check = _hl.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex()
+            if check != h:
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+    else:
+        raise HTTPException(status_code=401, detail="No password set")
+
+    is_admin = (user["role"] == "admin") or (user["is_admin"] or 0) == 1
+    if not is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    # Session token = user id
+    session_token = str(user["id"])
+
+    from fastapi.responses import JSONResponse
+    resp = JSONResponse({"ok": True, "email": email, "is_admin": True})
+    resp.set_cookie("vrouter_email", email, path="/", samesite="lax", max_age=86400 * 7)
+    resp.set_cookie("vrouter_session", session_token, path="/", samesite="lax", max_age=86400 * 7)
+    return resp
+
+
+@app.post("/admin/logout")
+async def admin_logout():
+    """Clear admin cookies."""
+    from fastapi.responses import JSONResponse
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie("vrouter_email", path="/")
+    resp.delete_cookie("vrouter_session", path="/")
+    return resp
+
+
+@app.get("/admin/api/me")
+async def admin_me(request: Request):
+    """Return current admin user info."""
+    email, is_admin = _admin_user(request)
+    if not email:
+        raise HTTPException(status_code=401, detail="Not logged in")
+    if not is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return {"email": email, "is_admin": True}
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ADMIN — MODEL MANAGEMENT (console.vrouter.my.id)
+# ═══════════════════════════════════════════════════════════════════
+# ADMIN — MODEL MANAGEMENT (console.vrouter.my.id)
+# ═══════════════════════════════════════════════════════════════════
+
+def _admin_db():
+    db = sqlite3.connect(PUBLIC_DB_PATH)
+    db.row_factory = sqlite3.Row
+    return db
+
+def _admin_user(request):
+    email = request.cookies.get("vrouter_email")
+    session_id = request.cookies.get("vrouter_session")
+    if not email or not session_id:
+        return None, False
+    db = _admin_db()
+    user = db.execute("SELECT role, is_admin FROM users WHERE email=? AND id=?", (email, session_id)).fetchone()
+    db.close()
+    if not user:
+        return None, False
+    is_admin = (user["role"] == "admin") or (user["is_admin"] or 0) == 1
+    return email, is_admin
+
+def require_admin(request):
+    from fastapi.responses import RedirectResponse
+    email, is_admin = _admin_user(request)
+    if not email:
+        raise HTTPException(status_code=401, detail="Not logged in")
+    if not is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return email
+
+def check_admin(request):
+    """Accept admin session OR dashboard session (vr_token)."""
+    # Try admin session first
+    email, is_admin = _admin_user(request)
+    if email and is_admin:
+        return email
+    # Try dashboard session
+    token = request.cookies.get("vr_token")
+    if token and token in VALID_SESSIONS:
+        return "dashboard"
+    raise HTTPException(status_code=401, detail="Admin or dashboard login required")
+
+# Legacy alias
+require_admin_orig = require_admin
+
+@app.get("/admin")
+async def admin_page(request: Request):
+    from fastapi.responses import RedirectResponse
+    email, is_admin = _admin_user(request)
+    if not email:
+        return RedirectResponse(url="/auth?next=/admin", status_code=302)
+    if not is_admin:
+        return RedirectResponse(url="/", status_code=302)
+    resp = templates.TemplateResponse(request, "admin.html", {
+        "site_name": SITE_NAME,
+        "site_url": SITE_URL,
+        "admin_email": email,
+    })
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
+
+@app.get("/admin/api/models")
+async def admin_list_models(request: Request):
+    check_admin(request)
+    backend_models = []
+    try:
+        resp = await request.app.state.client.get(
+            f"{SITE_URL}/v1/models",
+            headers={"Authorization": f"Bearer {API_KEY}"}
+        )
+        data = resp.json()
+        backend_models = data.get("data", [])
+    except Exception as e:
+        print(f"[Admin] Backend models fetch error: {e}")
+    db = _admin_db()
+    config_rows = db.execute("SELECT * FROM models_config").fetchall()
+    config = {r["model_id"]: dict(r) for r in config_rows}
+    db.close()
+    models = []
+    seen = set()
+    for m in backend_models:
+        mid = m.get("id", "")
+        if not mid or mid in seen:
+            continue
+        seen.add(mid)
+        cfg = config.get(mid, {})
+        if cfg.get("hidden"):
+            continue
+        models.append({
+            "id": mid,
+            "name": mid.split("/")[-1].upper().replace("-", " ") if "/" in mid else mid.upper().replace("-", " "),
+            "provider": mid.split("/")[0] if "/" in mid else "direct",
+            "enabled": cfg.get("enabled", 1),
+            "tier": cfg.get("tier", "free"),
+            "display_name": cfg.get("display_name", ""),
+            "sort_order": cfg.get("sort_order", 0),
+            "in_config": mid in config,
+        })
+    for mid, cfg in config.items():
+        if mid not in seen:
+            seen.add(mid)
+            if cfg.get("hidden"):
+                continue
+            models.append({
+                "id": mid,
+                "name": cfg.get("display_name", mid.split("/")[-1].upper().replace("-", " ")),
+                "provider": cfg.get("provider", "unknown"),
+                "enabled": cfg.get("enabled", 0),
+                "tier": cfg.get("tier", "disabled"),
+                "display_name": cfg.get("display_name", ""),
+                "sort_order": cfg.get("sort_order", 0),
+                "in_config": True,
+                "removed": True,
+            })
+    tier_order = {"free": 0, "pro": 1, "disabled": 2}
+    models.sort(key=lambda x: (0 if x["enabled"] else 1, tier_order.get(x["tier"], 3), x["sort_order"]))
+    return {"models": models, "total": len(models)}
+
+@app.post("/admin/api/models/sync")
+async def admin_sync_models(request: Request):
+    check_admin(request)
+    try:
+        resp = await request.app.state.client.get(
+            f"{SITE_URL}/v1/models",
+            headers={"Authorization": f"Bearer {API_KEY}"}
+        )
+        data = resp.json()
+        backend_models = data.get("data", [])
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    db = _admin_db()
+    added = 0
+    skipped = 0
+    for m in backend_models:
+        mid = m.get("id", "")
+        if not mid:
+            continue
+        exists = db.execute("SELECT id FROM models_config WHERE model_id=?", (mid,)).fetchone()
+        if exists:
+            skipped += 1
+            continue
+        provider = mid.split("/")[0] if "/" in mid else "direct"
+        display = mid.split("/")[-1].upper().replace("-", " ") if "/" in mid else mid.upper().replace("-", " ")
+        db.execute(
+            "INSERT INTO models_config (model_id, display_name, provider, enabled, tier, sort_order) VALUES (?, ?, ?, 1, 'free', ?)",
+            (mid, display, provider, added)
+        )
+        added += 1
+    db.commit()
+    db.close()
+    return {"ok": True, "added": added, "skipped": skipped, "total": len(backend_models)}
+
+@app.put("/admin/api/models/update")
+async def admin_update_model(request: Request):
+    check_admin(request)
+    body = await request.json()
+    model_id = body.get("model_id")
+    db = _admin_db()
+    exists = db.execute("SELECT id FROM models_config WHERE model_id=?", (model_id,)).fetchone()
+    if exists:
+        provider = body.get("provider", "")
+        if provider:
+            db.execute("UPDATE models_config SET enabled=?, tier=?, display_name=?, sort_order=?, hidden=?, provider=?, updated_at=datetime('now') WHERE model_id=?",
+                (body.get("enabled", 1), body.get("tier", "free"), body.get("display_name", ""), body.get("sort_order", 0), body.get("hidden", 0), provider, model_id))
+        else:
+            db.execute("UPDATE models_config SET enabled=?, tier=?, display_name=?, sort_order=?, hidden=?, updated_at=datetime('now') WHERE model_id=?",
+                (body.get("enabled", 1), body.get("tier", "free"), body.get("display_name", ""), body.get("sort_order", 0), body.get("hidden", 0), model_id))
+    else:
+        provider = body.get("provider", "") or (model_id.split("/")[0] if "/" in model_id else "direct")
+        db.execute("INSERT INTO models_config (model_id, display_name, provider, enabled, tier, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+            (model_id, body.get("display_name", model_id.split("/")[-1].upper().replace("-", " ")), provider, body.get("enabled", 1), body.get("tier", "free"), body.get("sort_order", 0)))
+    db.commit()
+    db.close()
+    return {"ok": True}
+
+@app.delete("/admin/api/models/delete")
+async def admin_delete_model(request: Request):
+    check_admin(request)
+    body = await request.json()
+    model_id = body.get("model_id")
+    if not model_id:
+        return {"ok": False, "detail": "model_id required"}
+    db = _admin_db()
+    exists = db.execute("SELECT id FROM models_config WHERE model_id=?", (model_id,)).fetchone()
+    if exists:
+        db.execute("UPDATE models_config SET hidden=1, updated_at=datetime('now') WHERE model_id=?", (model_id,))
+    else:
+        provider = model_id.split("/")[0] if "/" in model_id else "direct"
+        display = model_id.split("/")[-1].upper().replace("-", " ") if "/" in model_id else model_id.upper().replace("-", " ")
+        db.execute("INSERT INTO models_config (model_id, display_name, provider, enabled, tier, sort_order, hidden) VALUES (?, ?, ?, 0, 'disabled', 0, 1)",
+            (model_id, display, provider))
+    db.commit()
+    db.close()
+    return {"ok": True}
+
+@app.post("/admin/api/models/bulk")
+async def admin_bulk_update(request: Request):
+    check_admin(request)
+    body = await request.json()
+    updates = body.get("models", [])
+    db = _admin_db()
+    updated = 0
+    for u in updates:
+        mid = u.get("model_id")
+        if not mid:
+            continue
+        exists = db.execute("SELECT id FROM models_config WHERE model_id=?", (mid,)).fetchone()
+        if exists:
+            db.execute("UPDATE models_config SET enabled=?, tier=?, updated_at=datetime('now') WHERE model_id=?", (u.get("enabled", 1), u.get("tier", "free"), mid))
+        else:
+            provider = mid.split("/")[0] if "/" in mid else "direct"
+            db.execute("INSERT INTO models_config (model_id, display_name, provider, enabled, tier, sort_order) VALUES (?, ?, ?, ?, ?, 0)",
+                (mid, mid.split("/")[-1].upper().replace("-", " "), provider, u.get("enabled", 1), u.get("tier", "free")))
+        updated += 1
+    db.commit()
+    db.close()
+    return {"ok": True, "updated": updated}
 
 
 if __name__ == "__main__":

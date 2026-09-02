@@ -7,7 +7,7 @@
 <title>VRouter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Inter+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════
    VRouter Dashboard — Nexus-Inspired Theme
@@ -61,11 +61,16 @@ html.dark .qa-btn:hover { background: rgba(124,58,237,0.12); }
 html, body { height: 100%; scroll-behavior: smooth; }
 body {
   background: var(--bg); color: var(--text);
-  font-family: 'Geist', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-feature-settings: "cv01", "ss03"; font-size: 15px; line-height: 1.5; letter-spacing: -0.1px;
   -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased;
 }
-code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* Tabular numerals — angkanya rata */
+body, .stat-value, .kpi-value, .act-ms, .act-tokens, .proxy-url, .combo-route, td, .section-sub, .mono {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
 .hidden { display: none !important; }
 
 /* ═══ LOGIN ═══ */
@@ -545,6 +550,508 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Geist Mono', 'JetB
   .p-actions .btn { flex: 1; }
   .card { border-radius: 12px; }
 }
+
+/* ═══════════════════════════════════════
+   Admin Panel — Scoped Styles
+   ═══════════════════════════════════════ */
+
+/* ─── STATS ROW ─── */
+.admin-panel .adm-stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.admin-panel .adm-stat-card {
+  background: var(--card);
+  border: 1px solid var(--border-sub);
+  border-radius: 14px;
+  padding: 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.admin-panel .adm-stat-card:hover {
+  border-color: rgba(0,0,0,0.05);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+.admin-panel .adm-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.admin-panel .adm-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* ─── TOOLBAR ─── */
+.admin-panel .adm-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.admin-panel .adm-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.admin-panel .adm-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ─── SEARCH BOX ─── */
+.admin-panel .adm-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-width: 220px;
+  transition: border-color 0.15s;
+}
+.admin-panel .adm-search-box:focus-within {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 3px rgba(84,69,203,0.12);
+}
+.admin-panel .adm-search-box svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.admin-panel .adm-search-box input {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+}
+.admin-panel .adm-search-box input::placeholder {
+  color: var(--text3);
+}
+
+/* ─── TOGGLE HIDDEN BTN ─── */
+.admin-panel .adm-toggle-hidden-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.admin-panel .adm-toggle-hidden-btn:hover {
+  background: var(--card2);
+  color: var(--text);
+}
+.admin-panel .adm-toggle-hidden-btn.active {
+  background: rgba(239,68,68,0.08);
+  color: var(--red);
+  border-color: rgba(239,68,68,0.3);
+}
+.admin-panel .adm-toggle-hidden-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ─── KEYBOARD HINT ─── */
+.admin-panel .adm-kbd-hint {
+  font-size: 11px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-panel .adm-kbd-hint kbd {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+/* ─── TABLE WRAPPER ─── */
+.admin-panel .adm-table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border-sub);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.admin-panel .adm-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.admin-panel .adm-models-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+.admin-panel .adm-models-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card2);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.admin-panel .adm-models-table td {
+  padding: 10px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.admin-panel .adm-models-table tr:last-child td {
+  border-bottom: none;
+}
+.admin-panel .adm-models-table tbody tr {
+  transition: background 0.1s;
+}
+.admin-panel .adm-models-table tbody tr:hover {
+  background: var(--card2);
+}
+
+/* Row states */
+.admin-panel .adm-row-disabled {
+  opacity: 0.5;
+}
+.admin-panel .adm-row-disabled td {
+  border-bottom-color: rgba(0,0,0,0.03);
+}
+.admin-panel .adm-row-hidden {
+  opacity: 0.35;
+  background: rgba(239,68,68,0.02);
+}
+.admin-panel .adm-row-hidden td {
+  border-bottom-color: rgba(239,68,68,0.08);
+}
+
+/* ─── BADGES ─── */
+.admin-panel .adm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.admin-panel .adm-badge-free {
+  background: rgba(16,185,129,0.1);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,0.2);
+}
+.admin-panel .adm-badge-pro {
+  background: rgba(84,69,203,0.1);
+  color: var(--accent-h);
+  border: 1px solid rgba(84,69,203,0.2);
+}
+.admin-panel .adm-badge-disabled {
+  background: rgba(107,114,128,0.1);
+  color: var(--text3);
+  border: 1px solid rgba(107,114,128,0.2);
+}
+.admin-panel .adm-badge-hidden {
+  background: rgba(239,68,68,0.1);
+  color: var(--red);
+  border: 1px solid rgba(239,68,68,0.2);
+  margin-left: 4px;
+}
+.admin-panel .adm-badge-provider {
+  background: var(--card2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  font-size: 10px;
+}
+
+/* ─── TOGGLE SWITCH ─── */
+.admin-panel .adm-toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+  display: inline-block;
+}
+.admin-panel .adm-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.admin-panel .adm-toggle-slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--red);
+  border-radius: 22px;
+  transition: 0.25s ease;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+.admin-panel .adm-toggle-slider:before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  top: 2px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.admin-panel .adm-toggle input:checked + .adm-toggle-slider {
+  background: var(--green);
+}
+.admin-panel .adm-toggle input:checked + .adm-toggle-slider:before {
+  transform: translateX(18px);
+}
+
+/* ─── TIER SELECT ─── */
+.admin-panel .adm-tier-select {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.admin-panel .adm-tier-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ─── DISPLAY NAME CELL ─── */
+.admin-panel .adm-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-panel .adm-name-text {
+  color: var(--text2);
+  font-size: 12px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+.admin-panel .adm-name-text i {
+  opacity: 0.4;
+}
+
+/* ─── EDIT BUTTON ─── */
+.admin-panel .adm-edit-btn {
+  background: transparent;
+  color: var(--accent-h);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.admin-panel .adm-edit-btn:hover {
+  background: rgba(84,69,203,0.08);
+  border-color: var(--accent);
+}
+
+/* ─── RENAME INPUT (inline edit) ─── */
+.admin-panel .adm-rename-input {
+  background: var(--card2);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+.admin-panel .adm-rename-input:focus {
+  outline: none;
+  border-color: var(--accent-h);
+  box-shadow: 0 0 0 2px rgba(84,69,203,0.15);
+}
+
+/* ─── EMPTY STATE ─── */
+.admin-panel .adm-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+}
+.admin-panel .adm-empty-state svg {
+  margin: 0 auto 16px;
+  opacity: 0.4;
+}
+.admin-panel .adm-empty-state-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.admin-panel .adm-empty-state-desc {
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+/* ─── LOADING ─── */
+.admin-panel .adm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: var(--text3);
+  font-size: 13px;
+}
+.admin-panel .adm-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: admSpin 0.6s linear infinite;
+  margin-right: 10px;
+}
+@keyframes admSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── BULK ACTIONS ─── */
+.admin-panel .adm-bulk-actions {
+  display: none;
+  gap: 6px;
+  align-items: center;
+}
+.admin-panel .adm-bulk-actions.visible {
+  display: inline-flex;
+}
+
+/* ─── BUTTONS (admin-specific overrides) ─── */
+.admin-panel .adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.admin-panel .adm-btn:hover {
+  background: var(--card2);
+  border-color: rgba(0,0,0,0.06);
+  color: var(--text);
+}
+.admin-panel .adm-btn:active {
+  transform: translateY(0.5px);
+}
+.admin-panel .adm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.admin-panel .adm-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.admin-panel .adm-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.admin-panel .adm-btn-primary:hover {
+  background: var(--accent-h);
+  border-color: var(--accent-h);
+  color: white;
+}
+.admin-panel .adm-btn-danger {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.3);
+  color: var(--red);
+}
+.admin-panel .adm-btn-danger:hover {
+  background: rgba(239,68,68,0.2);
+  border-color: var(--red);
+  color: var(--red);
+}
+.admin-panel .adm-btn-success {
+  background: rgba(16,185,129,0.1);
+  border-color: rgba(16,185,129,0.3);
+  color: var(--green);
+}
+.admin-panel .adm-btn-success:hover {
+  background: rgba(16,185,129,0.2);
+  border-color: var(--green);
+  color: var(--green);
+}
+.admin-panel .adm-btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .admin-panel .adm-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .admin-panel .adm-search-box {
+    min-width: 0;
+    width: 100%;
+  }
+  .admin-panel .adm-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-panel .adm-toolbar-left,
+  .admin-panel .adm-toolbar-right {
+    width: 100%;
+  }
+  .admin-panel .adm-kbd-hint {
+    display: none;
+  }
+}
+
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
@@ -581,6 +1088,7 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Geist Mono', 'JetB
     <nav class="sidebar-nav">
       <div class="nav-section">
         <div class="nav-label">Overview</div>
+        <div class="nav-item" id="nav-admin" onclick="navTo('admin')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg><span>Admin Panel</span></div>
         <div class="nav-item active" id="nav-endpoint" onclick="navTo('endpoint')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>Dashboard</div>
         <div class="nav-item" id="nav-health" onclick="navTo('health')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</div>
       </div>
@@ -601,7 +1109,13 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Geist Mono', 'JetB
       </div>
       <div class="nav-section">
         <div class="nav-label">System</div>
-        <div class="nav-item" id="nav-settings" onclick="navTo('settings')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Settings</div>
+        <div class="nav-item" id="nav-liverequests" onclick="navTo('liverequests')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span>Live Requests</span></div>
+    <div class="nav-item" id="nav-modelinsights" onclick="navTo('modelinsights')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Model Insights</span></div>
+    <div class="nav-item" id="nav-hourlytraffic" onclick="navTo('hourlytraffic')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/></svg><span>Hourly Traffic</span></div>
+    <div class="nav-item" id="nav-alerts" onclick="navTo('alerts')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg><span>Alerts</span></div>
+    <div class="nav-item" id="nav-budget" onclick="navTo('budget')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>Budget</span></div>
+    <div class="nav-item" id="nav-charts" onclick="navTo('charts')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Charts</span></div>
+    <div class="nav-item" id="nav-settings" onclick="navTo('settings')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Settings</div>
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -845,6 +1359,126 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Geist Mono', 'JetB
           </div>
         </div>
       </div>
+
+
+<!-- ═══ LIVE REQUESTS ═══ -->
+<div id="panel-liverequests" class="panel hidden">
+  <div class="section-header"><div><div class="section-title">Live Requests</div><div class="section-sub">Real-time request feed</div></div></div>
+  <div class="card"><div class="card-body" id="liveRequestsList" style="max-height:480px;overflow-y:auto"></div></div>
+</div>
+
+<!-- ═══ MODEL INSIGHTS ═══ -->
+<div id="panel-modelinsights" class="panel hidden">
+  <div class="section-header"><div><div class="section-title">Model Insights</div><div class="section-sub">Per-model performance</div></div></div>
+  <div class="card"><div class="card-body" id="modelInsightsList"></div></div>
+</div>
+
+<!-- ═══ HOURLY TRAFFIC ═══ -->
+<div id="panel-hourlytraffic" class="panel hidden">
+  <div class="section-header"><div><div class="section-title">Hourly Traffic</div><div class="section-sub">Requests per hour</div></div></div>
+  <div class="card"><div class="card-body"><canvas id="hourlyChart" style="height:300px;width:100%"></canvas></div></div>
+</div>
+
+<!-- ═══ ALERTS ═══ -->
+<div id="panel-alerts" class="panel hidden">
+  <div class="section-header"><div><div class="section-title">Alerts</div><div class="section-sub">Threshold breaches</div></div></div>
+  <div class="card"><div class="card-body" id="alertsList"></div></div>
+</div>
+
+<!-- ═══ BUDGET TRACKER ═══ -->
+<div id="panel-budget" class="panel hidden">
+  <div class="section-header"><div><div class="section-title">Budget Tracker</div><div class="section-sub">Cost monitoring</div></div></div>
+  <div class="card"><div class="card-body" id="budgetList"></div></div>
+</div>
+
+<!-- ═══ CHARTS DASHBOARD ═══ -->
+<div id="panel-charts" class="panel hidden">
+  <div class="section-header"><div><div class="section-title">Charts</div><div class="section-sub">Visual analytics</div></div></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Requests/Min</div><canvas id="rpmChart" style="height:180px;width:100%"></canvas></div></div>
+    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Model Breakdown</div><canvas id="modelChart" style="height:180px;width:100%"></canvas></div></div>
+    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Provider Latency</div><canvas id="providerChart" style="height:180px;width:100%"></canvas></div></div>
+    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Error Breakdown</div><canvas id="errorChart" style="height:180px;width:100%"></canvas></div></div>
+    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Cost Trend</div><canvas id="costChart" style="height:180px;width:100%"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL HTML -->
+<div id="panel-admin" class="panel hidden admin-panel" style="padding:20px">
+
+  <!-- ═══ STATS ROW ═══ -->
+  <div class="adm-stats-row">
+    <div class="adm-stat-card">
+      <div class="adm-stat-label">Visible</div>
+      <div class="adm-stat-value" id="adm-stat-visible" style="color:var(--green)">—</div>
+    </div>
+    <div class="adm-stat-card">
+      <div class="adm-stat-label">Hidden</div>
+      <div class="adm-stat-value" id="adm-stat-hidden" style="color:var(--red)">—</div>
+    </div>
+    <div class="adm-stat-card">
+      <div class="adm-stat-label">Free</div>
+      <div class="adm-stat-value" id="adm-stat-free" style="color:var(--accent-h)">—</div>
+    </div>
+    <div class="adm-stat-card">
+      <div class="adm-stat-label">Pro</div>
+      <div class="adm-stat-value" id="adm-stat-pro" style="color:var(--accent-h)">—</div>
+    </div>
+    <div class="adm-stat-card">
+      <div class="adm-stat-label">Disabled</div>
+      <div class="adm-stat-value" id="adm-stat-disabled" style="color:var(--text3)">—</div>
+    </div>
+  </div>
+
+  <!-- ═══ TABLE ═══ -->
+  <div class="adm-table-wrap">
+    <!-- Table Header / Toolbar -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div class="adm-toolbar-left">
+        <div style="display:flex;align-items:center;gap:10px">
+          <h2 style="font-size:15px;font-weight:600;margin:0">All Models</h2>
+          <button class="adm-toggle-hidden-btn" id="adm-toggle-hidden-btn" onclick="admToggleShowHidden()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            Show Hidden
+          </button>
+        </div>
+      </div>
+      <div class="adm-toolbar-right">
+        <div class="adm-search-box">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" placeholder="Search models..." id="adm-search" oninput="admFilterModels()">
+        </div>
+        <span id="adm-bulk-actions" class="adm-bulk-actions">
+          <button class="adm-btn adm-btn-danger adm-btn-sm" onclick="admBulkHideSelected()">
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+            Hide (<span id="adm-sel-count">0</span>)
+          </button>
+          <button class="adm-btn adm-btn-success adm-btn-sm" onclick="admBulkUnhideSelected()">
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            Unhide (<span id="adm-sel-count-unhide">0</span>)
+          </button>
+        </span>
+        <span class="adm-kbd-hint"><kbd>⌘K</kbd> search · <kbd>Esc</kbd> clear</span>
+      </div>
+    </div>
+
+    <!-- Action Buttons Row -->
+    <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <button class="adm-btn" id="adm-sync-btn" onclick="admSyncModels()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Sync Backend
+      </button>
+      <button class="adm-btn" id="adm-all-free-btn" onclick="admBulkTier('free')">All Free</button>
+      <button class="adm-btn adm-btn-primary" id="adm-all-pro-btn" onclick="admBulkTier('pro')">All Pro</button>
+    </div>
+
+    <!-- Models Container -->
+    <div id="adm-models-container">
+      <div class="adm-loading"><div class="adm-spinner"></div>Loading models...</div>
+    </div>
+  </div>
+</div>
+
     </div>
   </main>
 
@@ -866,6 +1500,12 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Geist Mono', 'JetB
     <div class="nav-tab" id="bnav-usagelogs" onclick="navTo('usagelogs')">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 0V9m6 3v-3M9 12l3 3 3-3"/></svg>
       <span>Usage</span>
+    </div>
+    <div class="nav-tab" id="bnav-admin" onclick="navTo('admin')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg><span>Admin</span>
+    </div>
+    <div class="nav-tab" id="bnav-charts" onclick="navTo('charts')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Charts</span>
     </div>
     <div class="nav-tab" id="bnav-settings" onclick="navTo('settings')">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -1646,6 +2286,13 @@ function navTo(page){
     tokspeed:['Tok/s Meter','Analytics · streaming throughput'],
     circuits:['Circuit Breakers','Analytics · fault isolation'],
     usagelogs:['Usage Logs','Analytics · detailed request audit'],
+    liverequests:['Live Requests','Analytics · real-time feed'],
+    modelinsights:['Model Insights','Analytics · per-model metrics'],
+    hourlytraffic:['Hourly Traffic','Analytics · requests per hour'],
+    alerts:['Alerts','Analytics · threshold breaches'],
+    budget:['Budget Tracker','Analytics · cost monitoring'],
+    charts:['Charts','Analytics · visual analytics'],
+    admin:['Admin Panel','Control · model management'],
     settings:['Settings','System · configuration']
   };
   if(titles[page])$('pageTitle').textContent=titles[page][0];
@@ -1654,6 +2301,13 @@ function navTo(page){
   if(page==='tokspeed')loadTokSpeed();
   if(page==='circuits')loadCircuits();
   if(page==='healthscore')loadHealthScore();
+  if(page==='liverequests')renderLiveRequests();
+  if(page==='modelinsights')renderModelInsights();
+  if(page==='hourlytraffic'){renderHourlyTraffic();}
+  if(page==='alerts')renderAlerts();
+  if(page==='budget'){renderBudget();}
+  if(page==='charts'){initCharts();setTimeout(()=>{api('/api/status').then(updateChartsFromStatus)},500);}
+  if(page==='admin'){setTimeout(admLoadModels,300);}
   if(page==='costs')loadCosts();
   if(window.innerWidth<768)$('sidebar').classList.remove('open');
   $('sidebarOverlay').classList.remove('show');
@@ -1661,7 +2315,7 @@ function navTo(page){
 
 function restoreTab(){
   const hashPage=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','settings'];
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','liverequests','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
   if(hashPage&&valid.includes(hashPage))navTo(hashPage);
   else navTo('endpoint');
 }
@@ -2180,7 +2834,7 @@ document.addEventListener('touchcancel',function(){
 
 (function init(){
   const hashPage=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','tokspeed','circuits','health','history','settings'];
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','liverequests','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
   if(hashPage&&valid.includes(hashPage))curTab=hashPage;
   showAllSkeletons();
   api('/api/status').then(function(){hideLogin();loadAll();startAutoRefresh(30000)}).catch(function(){showLogin()});
@@ -2431,6 +3085,696 @@ function saveBulkProxyEdit() {
     if (input.value.trim()) promises.push(api('/api/proxies/' + encodeURIComponent(input.dataset.name), 'PUT', { url: input.value.trim() }));
   });
   Promise.all(promises).then(function() { toast('Proxies updated'); closeModal('bulkProxyModal'); clearProxySelection(); loadAll(); }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
+}
+
+
+
+<!-- ADMIN PANEL JS (to be injected before 
+
+/* ═══════════════════════════════════════
+   Admin Panel — Model Manager
+   All functions prefixed with adm
+   ═══════════════════════════════════════ */
+
+var admAllModels = [];
+var admAllModelsRaw = [];
+var admSelectedModels = new Set();
+var admShowHidden = false;
+
+/* ─── KEYBOARD SHORTCUT HANDLER ─── */
+var admKeyHandler = function(e) {
+  var panel = $('panel-admin');
+  if (!panel || panel.classList.contains('hidden')) return;
+
+  // Cmd/Ctrl+K → focus search
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    var s = $('adm-search');
+    if (s) { s.focus(); s.select(); }
+  }
+  // Esc → clear search + blur
+  if (e.key === 'Escape') {
+    var s = $('adm-search');
+    if (s && document.activeElement === s) {
+      s.value = '';
+      admFilterModels();
+      s.blur();
+    }
+  }
+};
+
+/* ─── LOAD MODELS ─── */
+function admLoadModels() {
+  var container = $('adm-models-container');
+  container.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div>Loading models...</div>';
+  api('/admin/api/models').then(function(data) {
+    admAllModelsRaw = data.models || [];
+    admFilterModels();
+  }).catch(function(e) {
+    container.innerHTML = '<div class="adm-loading" style="color:var(--red)">Error loading models: ' + esc(e.message) + '</div>';
+  });
+}
+
+/* ─── FILTER / APPLY HIDDEN ─── */
+function admFilterModels() {
+  if (admShowHidden) {
+    admAllModels = admAllModelsRaw;
+  } else {
+    admAllModels = admAllModelsRaw.filter(function(m) { return !m.hidden; });
+  }
+  var q = ($('adm-search') ? $('adm-search').value : '').toLowerCase();
+  var filtered = admAllModels.filter(function(m) {
+    return m.id.toLowerCase().indexOf(q) !== -1
+      || (m.display_name || '').toLowerCase().indexOf(q) !== -1
+      || m.provider.toLowerCase().indexOf(q) !== -1
+      || (m.tier || '').toLowerCase().indexOf(q) !== -1;
+  });
+  admUpdateStats();
+  admRenderModels(filtered);
+}
+
+/* ─── TOGGLE SHOW HIDDEN ─── */
+function admToggleShowHidden() {
+  admShowHidden = !admShowHidden;
+  var btn = $('adm-toggle-hidden-btn');
+  btn.classList.toggle('active', admShowHidden);
+  btn.innerHTML = admShowHidden
+    ? '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg> Hide Hidden'
+    : '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Show Hidden';
+  admSelectedModels.clear();
+  admUpdateBulkBtn();
+  admFilterModels();
+}
+
+/* ─── UPDATE STATS ─── */
+function admUpdateStats() {
+  var visible = admAllModelsRaw.filter(function(m) { return !m.hidden && m.enabled; }).length;
+  var hidden = admAllModelsRaw.filter(function(m) { return m.hidden; }).length;
+  var free = admAllModelsRaw.filter(function(m) { return !m.hidden && m.tier === 'free' && m.enabled; }).length;
+  var pro = admAllModelsRaw.filter(function(m) { return !m.hidden && m.tier === 'pro' && m.enabled; }).length;
+  var disabled = admAllModelsRaw.filter(function(m) { return !m.hidden && !m.enabled; }).length;
+  $('adm-stat-visible').textContent = visible;
+  $('adm-stat-hidden').textContent = hidden;
+  $('adm-stat-free').textContent = free;
+  $('adm-stat-pro').textContent = pro;
+  $('adm-stat-disabled').textContent = disabled;
+}
+
+/* ─── RENDER MODELS TABLE ─── */
+function admRenderModels(models) {
+  var container = $('adm-models-container');
+  if (!models.length) {
+    container.innerHTML =
+      '<div class="adm-empty-state">' +
+        '<svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>' +
+        '<div class="adm-empty-state-title">No models found</div>' +
+        '<div class="adm-empty-state-desc">Click "Sync Backend" to import available models, or adjust your search.</div>' +
+        '<button class="adm-btn adm-btn-primary" onclick="admSyncModels()">Sync Backend</button>' +
+      '</div>';
+    return;
+  }
+
+  var h = '<div class="adm-table-scroll"><table class="adm-models-table"><thead><tr>';
+  h += '<th style="width:40px;text-align:center"><input type="checkbox" id="adm-select-all" onchange="admToggleSelectAll(this.checked)" title="Select All"></th>';
+  h += '<th>Model ID</th><th>Display Name (Alias)</th><th>Provider</th><th>Tier</th><th>Status</th><th style="text-align:right">Actions</th>';
+  h += '</tr></thead><tbody>';
+
+  for (var i = 0; i < models.length; i++) {
+    var m = models[i];
+    var isEnabled = !!m.enabled;
+    var isHidden = !!m.hidden;
+    var rowClass = isHidden ? 'adm-row-hidden' : (isEnabled ? '' : 'adm-row-disabled');
+
+    var safeId = esc(m.id);
+    var safeIdAttr = m.id.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    var safeDnId = m.id.replace(/[^a-zA-Z0-9]/g, '_');
+    var displayName = m.display_name || '';
+    var provider = m.provider || '';
+    var safeProvider = esc(provider);
+    var tier = m.tier || 'free';
+
+    var tierBadge = tier === 'free' ? '<span class="adm-badge adm-badge-free">Free</span>'
+      : tier === 'pro' ? '<span class="adm-badge adm-badge-pro">Pro</span>'
+      : '<span class="adm-badge adm-badge-disabled">Disabled</span>';
+    if (isHidden) tierBadge += ' <span class="adm-badge adm-badge-hidden">Hidden</span>';
+
+    var toggleChecked = isEnabled ? ' checked' : '';
+    var toggleHtml = '<label class="adm-toggle"><input type="checkbox"' + toggleChecked +
+      ' onchange="admToggleModel(\'' + safeIdAttr + '\',this.checked)"><span class="adm-toggle-slider"></span></label>';
+
+    var nameDisplay = displayName
+      ? '<span class="adm-name-text" id="adm-dn-' + esc(safeDnId) + '">' + esc(displayName) + '</span>'
+      : '<span class="adm-name-text" id="adm-dn-' + esc(safeDnId) + '"><i>— set alias —</i></span>';
+
+    h += '<tr class="' + rowClass + '" data-id="' + safeIdAttr + '">';
+    h += '<td style="text-align:center"><input type="checkbox" class="adm-row-select" data-id="' + safeIdAttr + '" onchange="admToggleSelect(\'' + safeIdAttr + '\',this.checked)"></td>';
+    h += '<td><div style="font-weight:600;font-size:13px;font-family:Geist Mono,ui-monospace,monospace">' + safeId + '</div></td>';
+    h += '<td><div class="adm-name-cell">' + nameDisplay + '<button class="adm-edit-btn" onclick="admEditModel(\'' + safeIdAttr + '\')">Edit</button></div></td>';
+    h += '<td><span class="adm-badge adm-badge-provider">' + safeProvider + '</span></td>';
+    h += '<td><select class="adm-tier-select" onchange="admChangeTier(\'' + safeIdAttr + '\',this.value)">';
+    h += '<option value="free"' + (tier === 'free' ? ' selected' : '') + '>Free</option>';
+    h += '<option value="pro"' + (tier === 'pro' ? ' selected' : '') + '>Pro</option>';
+    h += '<option value="disabled"' + (tier === 'disabled' ? ' selected' : '') + '>Disabled</option>';
+    h += '</select></td>';
+    h += '<td>' + toggleHtml + '</td>';
+    h += '<td style="text-align:right;display:flex;gap:4px;justify-content:flex-end">';
+    if (isHidden) {
+      h += '<button class="adm-btn adm-btn-success adm-btn-sm" onclick="admUnhideModel(\'' + safeIdAttr + '\')">Unhide</button>';
+    } else {
+      h += '<button class="adm-btn adm-btn-danger adm-btn-sm" onclick="admHideModel(\'' + safeIdAttr + '\')">Hide</button>';
+    }
+    h += '</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  container.innerHTML = h;
+}
+
+/* ─── TOGGLE MODEL ENABLED/DISABLED ─── */
+function admToggleModel(modelId, enabled) {
+  var m = admAllModels.find(function(x) { return x.id === modelId; });
+  if (m) { m.enabled = enabled ? 1 : 0; admUpdateStats(); }
+  api('/admin/api/models/update', 'PUT', {
+    model_id: modelId,
+    enabled: enabled ? 1 : 0,
+    tier: m ? m.tier : 'free',
+    display_name: m ? (m.display_name || '') : '',
+    provider: m ? (m.provider || '') : ''
+  }).then(function() {
+    toast('Updated ' + modelId);
+  }).catch(function(e) {
+    toast('Update failed: ' + e.message, 'err');
+  });
+}
+
+/* ─── CHANGE TIER ─── */
+function admChangeTier(modelId, tier) {
+  var m = admAllModels.find(function(x) { return x.id === modelId; });
+  if (m) m.tier = tier;
+  api('/admin/api/models/update', 'PUT', {
+    model_id: modelId,
+    enabled: m ? m.enabled : 1,
+    tier: tier,
+    display_name: m ? (m.display_name || '') : '',
+    provider: m ? (m.provider || '') : ''
+  }).then(function() {
+    admUpdateStats();
+    toast('Set ' + modelId + ' → ' + tier);
+  }).catch(function(e) {
+    toast('Tier change failed: ' + e.message, 'err');
+  });
+}
+
+/* ─── HIDE MODEL ─── */
+function admHideModel(modelId) {
+  vconfirm({
+    type: 'delete',
+    title: 'Hide Model',
+    message: 'Hide <strong>' + esc(modelId) + '</strong> from users?',
+    okText: 'Hide'
+  }).then(function(ok) {
+    if (!ok) return;
+    api('/admin/api/models/delete', 'DELETE', { model_id: modelId }).then(function() {
+      toast('Hidden ' + modelId);
+      admLoadModels();
+    }).catch(function(e) {
+      toast('Hide failed: ' + e.message, 'err');
+    });
+  });
+}
+
+/* ─── UNHIDE MODEL ─── */
+function admUnhideModel(modelId) {
+  api('/admin/api/models/update', 'PUT', {
+    model_id: modelId,
+    enabled: 1,
+    tier: 'free',
+    display_name: '',
+    provider: '',
+    hidden: 0
+  }).then(function() {
+    toast('Unhidden ' + modelId);
+    admLoadModels();
+  }).catch(function(e) {
+    toast('Unhide failed: ' + e.message, 'err');
+  });
+}
+
+/* ─── EDIT MODEL (inline) ─── */
+function admEditModel(modelId) {
+  var m = admAllModels.find(function(x) { return x.id === modelId; });
+  if (!m) return;
+  var row = document.querySelector('#adm-models-container tr[data-id="' + modelId.replace(/"/g, '&quot;') + '"]');
+  if (!row) return;
+  var cells = row.querySelectorAll('td');
+  if (cells.length < 7) return;
+
+  var modelIdCell = cells[1];
+  var nameCell = cells[2];
+  var providerCell = cells[3];
+
+  var safeVal = m.id.replace(/"/g, '&quot;');
+  var safeDnVal = (m.display_name || '').replace(/"/g, '&quot;');
+  var safeProvVal = m.provider.replace(/"/g, '&quot;');
+
+  modelIdCell.innerHTML = '<input class="adm-rename-input" id="adm-edit-model-id" type="text" value="' + safeVal + '" placeholder="Model ID">';
+  nameCell.innerHTML = '<input class="adm-rename-input" id="adm-edit-display-name" type="text" value="' + safeDnVal + '" placeholder="Display name">';
+  providerCell.innerHTML = '<input class="adm-rename-input" id="adm-edit-provider" type="text" value="' + safeProvVal + '" placeholder="Provider">';
+
+  var actionsCell = cells[6];
+  actionsCell.innerHTML = '<div style="display:flex;gap:4px;justify-content:flex-end">' +
+    '<button class="adm-btn adm-btn-sm adm-btn-primary" onclick="admSaveEdit(\'' + m.id.replace(/'/g, "\\'") + '\')" style="padding:4px 8px;font-size:11px">Save</button>' +
+    '<button class="adm-btn adm-btn-sm" onclick="admLoadModels()" style="padding:4px 8px;font-size:11px">Cancel</button></div>';
+
+  var eid = $('adm-edit-model-id');
+  if (eid) eid.focus();
+}
+
+/* ─── SAVE EDIT ─── */
+function admSaveEdit(modelId) {
+  var newModelId = ($('adm-edit-model-id') ? $('adm-edit-model-id').value : '').trim();
+  var newDisplayName = ($('adm-edit-display-name') ? $('adm-edit-display-name').value : '').trim();
+  var newProvider = ($('adm-edit-provider') ? $('adm-edit-provider').value : '').trim();
+
+  if (!newModelId || !newProvider) {
+    toast('Model ID and Provider required', 'err');
+    return;
+  }
+
+  var m = admAllModels.find(function(x) { return x.id === modelId; });
+  var updateBody = {
+    model_id: newModelId,
+    display_name: newDisplayName,
+    provider: newProvider,
+    enabled: m ? m.enabled : 1,
+    tier: m ? m.tier : 'free'
+  };
+
+  if (newModelId !== modelId) {
+    // If model_id changed, delete old then create new
+    api('/admin/api/models/delete', 'DELETE', { model_id: modelId }).then(function() {
+      return api('/admin/api/models/update', 'PUT', updateBody);
+    }).then(function() {
+      toast('Updated: ' + newModelId);
+      admLoadModels();
+    }).catch(function(e) {
+      toast('Save failed: ' + e.message, 'err');
+    });
+  } else {
+    api('/admin/api/models/update', 'PUT', updateBody).then(function() {
+      toast('Updated: ' + newModelId);
+      admLoadModels();
+    }).catch(function(e) {
+      toast('Save failed: ' + e.message, 'err');
+    });
+  }
+}
+
+/* ─── SELECT / BULK ─── */
+function admToggleSelect(modelId, checked) {
+  if (checked) { admSelectedModels.add(modelId); } else { admSelectedModels.delete(modelId); }
+  admUpdateBulkBtn();
+}
+
+function admToggleSelectAll(checked) {
+  admSelectedModels.clear();
+  if (checked) {
+    admAllModels.forEach(function(m) { admSelectedModels.add(m.id); });
+  }
+  var cbs = document.querySelectorAll('#adm-models-container .adm-row-select');
+  for (var i = 0; i < cbs.length; i++) { cbs[i].checked = checked; }
+  admUpdateBulkBtn();
+}
+
+function admUpdateBulkBtn() {
+  var bulkDiv = $('adm-bulk-actions');
+  var countEl = $('adm-sel-count');
+  var countEl2 = $('adm-sel-count-unhide');
+  var n = admSelectedModels.size;
+  if (bulkDiv) {
+    bulkDiv.style.display = n > 0 ? 'inline-flex' : 'none';
+  }
+  if (countEl) countEl.textContent = n;
+  if (countEl2) countEl2.textContent = n;
+}
+
+/* ─── BULK HIDE SELECTED ─── */
+function admBulkHideSelected() {
+  var ids = Array.from(admSelectedModels);
+  if (!ids.length) return;
+  vconfirm({
+    type: 'delete',
+    title: 'Bulk Hide',
+    message: 'Hide <strong>' + ids.length + '</strong> selected model(s) from users?',
+    okText: 'Hide'
+  }).then(function(ok) {
+    if (!ok) return;
+    var deleted = 0;
+    var chain = Promise.resolve();
+    ids.forEach(function(id) {
+      chain = chain.then(function() {
+        return api('/admin/api/models/delete', 'DELETE', { model_id: id }).then(function(data) {
+          if (data.ok) deleted++;
+        }).catch(function() {});
+      });
+    });
+    chain.then(function() {
+      admSelectedModels.clear();
+      admUpdateBulkBtn();
+      toast('Hidden ' + deleted + ' of ' + ids.length + ' models');
+      admLoadModels();
+    });
+  });
+}
+
+/* ─── BULK UNHIDE SELECTED ─── */
+function admBulkUnhideSelected() {
+  var ids = Array.from(admSelectedModels);
+  if (!ids.length) return;
+  vconfirm({
+    type: 'info',
+    title: 'Bulk Unhide',
+    message: 'Unhide <strong>' + ids.length + '</strong> selected model(s)?',
+    okText: 'Unhide'
+  }).then(function(ok) {
+    if (!ok) return;
+    var restored = 0;
+    var chain = Promise.resolve();
+    ids.forEach(function(id) {
+      chain = chain.then(function() {
+        return api('/admin/api/models/update', 'PUT', {
+          model_id: id, enabled: 1, tier: 'free', display_name: '', provider: '', hidden: 0
+        }).then(function(data) {
+          if (data.ok) restored++;
+        }).catch(function() {});
+      });
+    });
+    chain.then(function() {
+      admSelectedModels.clear();
+      admUpdateBulkBtn();
+      toast('Unhidden ' + restored + ' of ' + ids.length + ' models');
+      admLoadModels();
+    });
+  });
+}
+
+/* ─── BULK TIER ─── */
+function admBulkTier(tier) {
+  var btnId = tier === 'free' ? 'adm-all-free-btn' : 'adm-all-pro-btn';
+  var btn = $(btnId);
+  var label = tier.charAt(0).toUpperCase() + tier.slice(1);
+  vconfirm({
+    type: tier === 'free' ? 'info' : 'danger',
+    title: 'Set All to ' + label,
+    message: 'Set ALL visible models to <strong>' + label + '</strong> tier?',
+    okText: 'Apply'
+  }).then(function(ok) {
+    if (!ok) return;
+    var orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<div class="adm-spinner" style="width:14px;height:14px;border-width:2px;margin:0"></div> Applying...';
+    var models = admAllModels.filter(function(m) { return !m.hidden; }).map(function(m) {
+      return { model_id: m.id, enabled: m.enabled, tier: tier };
+    });
+    api('/admin/api/models/bulk', 'POST', { models: models }).then(function(data) {
+      if (!data.ok) throw new Error(data.error || 'Failed');
+      toast('All visible models set to ' + tier);
+      admLoadModels();
+    }).catch(function(e) {
+      toast('Bulk tier failed: ' + e.message, 'err');
+    }).finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = orig;
+    });
+  });
+}
+
+/* ─── SYNC BACKEND ─── */
+function admSyncModels() {
+  var btn = $('adm-sync-btn');
+  var orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="adm-spinner" style="width:14px;height:14px;border-width:2px"></div> Syncing...';
+  api('/admin/api/models/sync', 'POST').then(function(data) {
+    toast('Synced! Added ' + data.added + ', skipped ' + data.skipped);
+    admLoadModels();
+  }).catch(function(e) {
+    toast('Sync failed: ' + e.message, 'err');
+  }).finally(function() {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  });
+}
+
+/* ─── TOAST (uses existing dashboard toast) ─── */
+function admShowToast(msg, type) {
+  toast(msg, type || 'ok');
+}
+
+/* ─── KEYBOARD SHORTCUT REGISTRATION ─── */
+document.addEventListener('keydown', admKeyHandler);
+
+// ══════════════════════════════════════════════════
+// NEW FEATURE PANELS — Live Requests, Model Insights, etc.
+// ══════════════════════════════════════════════════
+
+// ─── Chart.js instances ───
+let rpmChart, modelChart, providerChart, errorChart, costChart, hourlyChart;
+
+function initCharts() {
+  // RPM chart
+  const rpmCtx = document.getElementById('rpmChart')?.getContext('2d');
+  if (rpmCtx && !rpmChart) {
+    rpmChart = new Chart(rpmCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{ label: 'Requests/Min', data: [], borderColor: '#5445cb', backgroundColor: 'rgba(84,69,203,0.1)', fill: true, tension: 0.4, pointRadius: 3 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } } }
+      }
+    });
+  }
+  // Model breakdown donut
+  const modelCtx = document.getElementById('modelChart')?.getContext('2d');
+  if (modelCtx && !modelChart) {
+    modelChart = new Chart(modelCtx, {
+      type: 'doughnut',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: ['#5445cb','#4695fe','#15c6c8','#10b981','#f59e0b','#ef4444'], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } } } }
+    });
+  }
+  // Provider latency bar
+  const provCtx = document.getElementById('providerChart')?.getContext('2d');
+  if (provCtx && !providerChart) {
+    providerChart = new Chart(provCtx, {
+      type: 'bar',
+      data: { labels: [], datasets: [{ label: 'Avg Latency (ms)', data: [], backgroundColor: '#5445cb', borderRadius: 4 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } }
+      }
+    });
+  }
+  // Error breakdown pie
+  const errCtx = document.getElementById('errorChart')?.getContext('2d');
+  if (errCtx && !errorChart) {
+    errorChart = new Chart(errCtx, {
+      type: 'pie',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: ['#ef4444','#f59e0b','#6b7280','#4695fe'], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8, font: { size: 11 } } } } }
+    });
+  }
+  // Cost trend line
+  const costCtx = document.getElementById('costChart')?.getContext('2d');
+  if (costCtx && !costChart) {
+    costChart = new Chart(costCtx, {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: 'Cost ($)', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4, pointRadius: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } } }
+      }
+    });
+  }
+  // Hourly traffic chart
+  const hCtx = document.getElementById('hourlyChart')?.getContext('2d');
+  if (hCtx && !hourlyChart) {
+    hourlyChart = new Chart(hCtx, {
+      type: 'bar',
+      data: { labels: [], datasets: [{ label: 'Requests', data: [], backgroundColor: '#4695fe', borderRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } } }
+      }
+    });
+  }
+}
+
+function updateChartsFromStatus(status) {
+  if (!rpmChart) return;
+  const history = status.history || [];
+  const labels = history.map((_, i) => '');
+  const rpmData = history.map(h => h.requests_per_min || 0);
+  rpmChart.data.labels = labels;
+  rpmChart.data.datasets[0].data = rpmData;
+  rpmChart.update('none');
+
+  // Model breakdown
+  if (modelChart && status.models) {
+    const models = Object.entries(status.models).slice(0, 8);
+    modelChart.data.labels = models.map(([k]) => k);
+    modelChart.data.datasets[0].data = models.map(([,v]) => v.requests || 0);
+    modelChart.update('none');
+  }
+
+  // Provider latency
+  if (providerChart && status.providers) {
+    const provs = Object.entries(status.providers).filter(([,v]) => v.avg_latency);
+    provs.sort((a,b) => (b[1].avg_latency||0) - (a[1].avg_latency||0));
+    providerChart.data.labels = provs.map(([k]) => k);
+    providerChart.data.datasets[0].data = provs.map(([,v]) => Math.round(v.avg_latency||0));
+    providerChart.update('none');
+  }
+
+  // Cost trend
+  if (costChart && status.cost_history) {
+    costChart.data.labels = status.cost_history.map((_, i) => '');
+    costChart.data.datasets[0].data = status.cost_history;
+    costChart.update('none');
+  }
+}
+
+// ─── Live Requests ───
+function renderLiveRequests() {
+  const el = document.getElementById('liveRequestsList');
+  if (!el) return;
+  api('/api/status').then(r => {
+    const history = (r.history || []).slice(-30).reverse();
+    if (!history.length) { el.innerHTML = '<div class="empty-state">No recent requests</div>'; return; }
+    el.innerHTML = history.map(h => {
+      const model = h.model || '—';
+      const ms = h.latency_ms || 0;
+      const cls = ms > 5000 ? 'err' : ms > 2000 ? 'slow' : 'ok';
+      return `<div class="activity-item" style="padding:10px 0;border-bottom:1px solid var(--border-sub);display:flex;align-items:center;gap:10px">
+        <span class="act-status ${cls}"></span>
+        <span class="act-provider">${esc(h.provider||'?')}</span>
+        <span class="act-model">${esc(model)}</span>
+        <span class="act-stats"><span class="act-ms">${ms}ms</span> <span class="act-tokens">${h.tokens||0}t</span></span>
+      </div>`;
+    }).join('');
+  }).catch(e => { el.innerHTML = '<div class="empty-state">Error loading: ' + e.message + '</div>'; });
+}
+
+// ─── Model Insights ───
+function renderModelInsights() {
+  const el = document.getElementById('modelInsightsList');
+  if (!el) return;
+  api('/api/status').then(r => {
+    const models = r.models || {};
+    const entries = Object.entries(models);
+    if (!entries.length) { el.innerHTML = '<div class="empty-state">No model data</div>'; return; }
+    entries.sort((a,b) => (b[1].requests||0) - (a[1].requests||0));
+    el.innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Model</th><th>Requests</th><th>Avg Latency</th><th>Tokens</th></tr></thead><tbody>' +
+      entries.map(([k,v]) => `<tr><td>${esc(k)}</td><td>${v.requests||0}</td><td>${Math.round(v.avg_latency||0)}ms</td><td>${v.tokens||0}</td></tr>`).join('') +
+      '</tbody></table></div>';
+  }).catch(e => { el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; });
+}
+
+// ─── Hourly Traffic ───
+function renderHourlyTraffic() {
+  if (!hourlyChart) initCharts();
+  api('/api/status').then(r => {
+    const history = r.history || [];
+    if (!history.length || !hourlyChart) return;
+    const hourly = {};
+    history.forEach(h => {
+      const hour = new Date(h.timestamp || Date.now()).getHours() + ':00';
+      hourly[hour] = (hourly[hour]||0) + (h.requests_per_min || 1);
+    });
+    const labels = Object.keys(hourly).slice(-12);
+    hourlyChart.data.labels = labels;
+    hourlyChart.data.datasets[0].data = labels.map(l => hourly[l]||0);
+    hourlyChart.update('none');
+  }).catch(() => {});
+}
+
+// ─── Alerts ───
+function renderAlerts() {
+  const el = document.getElementById('alertsList');
+  if (!el) return;
+  api('/api/status').then(r => {
+    const alerts = [];
+    const providers = r.providers || {};
+    Object.entries(providers).forEach(([k,v]) => {
+      if (v.status === 'error') alerts.push({ type: 'error', msg: k + ' is down', severity: 'critical' });
+      if (v.status === 'degraded') alerts.push({ type: 'warning', msg: k + ' is degraded', severity: 'warning' });
+      if ((v.avg_latency||0) > 10000) alerts.push({ type: 'latency', msg: k + ' latency >10s', severity: 'warning' });
+    });
+    if (r.success_rate !== undefined && r.success_rate < 0.9) {
+      alerts.push({ type: 'error', msg: 'Success rate below 90%', severity: 'critical' });
+    }
+    if (!alerts.length) { el.innerHTML = '<div class="empty-state" style="padding:20px;text-align:center;color:var(--text3)">✅ No active alerts</div>'; return; }
+    el.innerHTML = alerts.map(a => `<div class="activity-item" style="padding:12px 0;border-bottom:1px solid var(--border-sub);display:flex;align-items:center;gap:10px">
+      <span class="act-status ${a.severity === 'critical' ? 'err' : 'slow'}"></span>
+      <span style="font-size:13px">${esc(a.msg)}</span>
+      <span class="act-stats"><span class="act-tokens" style="text-transform:uppercase;font-size:10px">${a.severity}</span></span>
+    </div>`).join('');
+  }).catch(() => {});
+}
+
+// ─── Budget Tracker ───
+function renderBudget() {
+  const el = document.getElementById('budgetList');
+  if (!el) return;
+  api('/api/status').then(r => {
+    const totalCost = r.total_cost_usd || 0;
+    const dailyCost = r.daily_cost_usd || 0;
+    const budget = 50;
+    const pct = Math.min(100, (totalCost / budget) * 100);
+    const remaining = Math.max(0, budget - totalCost);
+    el.innerHTML = `<div style="padding:16px 0">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:20px">
+        <div class="stat-card" style="padding:16px;border:1px solid var(--border-sub);border-radius:14px">
+          <div style="font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Total Cost</div>
+          <div style="font-size:28px;font-weight:600">$${totalCost.toFixed(2)}</div>
+        </div>
+        <div class="stat-card" style="padding:16px;border:1px solid var(--border-sub);border-radius:14px">
+          <div style="font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Today</div>
+          <div style="font-size:28px;font-weight:600">$${dailyCost.toFixed(2)}</div>
+        </div>
+        <div class="stat-card" style="padding:16px;border:1px solid var(--border-sub);border-radius:14px">
+          <div style="font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Budget</div>
+          <div style="font-size:28px;font-weight:600">$${budget.toFixed(2)}</div>
+        </div>
+        <div class="stat-card" style="padding:16px;border:1px solid var(--border-sub);border-radius:14px">
+          <div style="font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Remaining</div>
+          <div style="font-size:28px;font-weight:600">$${remaining.toFixed(2)}</div>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px">
+          <span>Budget Used</span><span>${pct.toFixed(1)}%</span>
+        </div>
+        <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#5445cb,#4695fe);border-radius:4px;transition:width 0.5s"></div>
+        </div>
+      </div>
+    </div>`;
+  }).catch(() => {});
+}
+
+// ─── NavTo additions for new panels ───
+// These are added to the navTo function already via titles update and additional checks below
+
+// ─── Update charts on theme toggle ───
+function updateChartColors(isDark) {
+  const textColor = isDark ? '#F5F7FA' : '#4a4a6a';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  [rpmChart, modelChart, providerChart, errorChart, costChart, hourlyChart].forEach(chart => {
+    if (!chart) return;
+    if (chart.options.scales?.x) { chart.options.scales.x.ticks.color = textColor; chart.options.scales.x.grid.color = gridColor; }
+    if (chart.options.scales?.y) { chart.options.scales.y.ticks.color = textColor; chart.options.scales.y.grid.color = gridColor; }
+    if (chart.options.plugins?.legend) chart.options.plugins.legend.labels.color = textColor;
+    chart.update('none');
+  });
 }
 
 </script>

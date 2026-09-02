@@ -1,33 +1,39 @@
-# === SECRETS / CREDENTIALS (never publish) ===
-config.yaml
-config.yaml.bak
-config.yaml.bak.*
-*.bak
-*.bak.*
-.env
-.env.*
-*.pem
+# Secrets & credentials
 *.key
-secrets/
-credentials/
+*.pem
+genspark_key.txt
+.env
+.env.local
+config.yaml
 
-# === RUNTIME STATE / DATA ===
-vrouter.db
-router_state.json
-history.jsonl
-models_cache.json
+# Session data
+.vr_sessions.json
+*.vault.json
+
+# Databases & runtime state
+*.db
 *.sqlite
 *.sqlite3
-*.db
+history.jsonl
+models_cache.json
+router_state.json
 
-# === PYTHON ===
+# Backups
+*.bak*
+*.removed-*
+
+# Legacy superseded files
+admin.html
+
+# Python
 __pycache__/
 *.pyc
 .venv/
 venv/
-*.egg-info/
 
-# === MISC ===
-.DS_Store
+# Node
+node_modules/
+
+# Logs
 *.log
-nohup.out
+pm2-*.log
