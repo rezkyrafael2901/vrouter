@@ -2210,27 +2210,38 @@ function costGaugeBar(totalCost, todayCost){
 /* ═══ Activity Feed ═══ */
 function renderActivityFeed(){
   api('/api/history').then(d=>{
-    const items=(d.items||[]).slice(0,8);
+    const items=(d.items||[]).slice(0,15);
     const el=$('activityFeed');
     if(!el)return;
     if(!items.length){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:20px;font-size:13px">Belum ada activity</div>';return}
-    el.innerHTML=items.map(it=>{
-      const statusCls=it.ms>8000?'err':it.ms>4000?'slow':'ok';
-      const ts=it.ts?new Date(it.ts*1000):new Date();
-      const time=ts.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-      const ms=(it.ms||0).toLocaleString('id-ID');
-      const tok=(it.total_tokens||0).toLocaleString('id-ID');
-      return `<div class="activity-item">
-        <div class="act-status ${statusCls}"></div>
-        <div class="act-provider" title="${esc(it.provider||'')}">${esc(it.provider||'')}</div>
-        <div class="act-model" title="${esc(it.model||'')}">${esc(it.model||'')}</div>
-        <div class="act-stats">
-          <span class="act-ms" style="color:${statusCls==='err'?'var(--red)':statusCls==='slow'?'var(--amber)':'var(--green)'}">${ms}ms</span>
-          <span class="act-tokens">${tok}tok</span>
-          <span style="color:var(--text4);font-size:10px;white-space:nowrap">${time}</span>
-        </div>
-      </div>`;
-    }).join('');
+    el.innerHTML=`<div class="tbl-wrap"><table class="tbl" style="min-width:600px">
+      <thead><tr>
+        <th style="width:36px"></th>
+        <th>Provider</th>
+        <th>Model</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Token In</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Token Out</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Latency</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Time</th>
+      </tr></thead>
+      <tbody>` +
+      items.map(it=>{
+        const ms=it.ms||0;
+        const cls=ms>5000?'err':ms>2000?'slow':'ok';
+        const pTok=it.prompt_tokens||0;
+        const cTok=it.completion_tokens||0;
+        const timeStr=it.ts?timeAgo(it.ts):'—';
+        return `<tr>
+          <td><span class="act-status ${cls}" style="display:inline-block"></span></td>
+          <td class="act-provider">${esc(it.provider||'?')}</td>
+          <td class="act-model">${esc(it.model||'—')}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#f5c518">↓ ${pTok.toLocaleString()}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#22c55e">↑ ${cTok.toLocaleString()}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
+          <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
+        </tr>`;
+      }).join('') +
+      `</tbody></table></div>`;
   }).catch(()=>{});
 }
 
