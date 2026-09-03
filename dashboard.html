@@ -525,6 +525,39 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .hs-dot.down .hs-dot-ind{background:var(--red);box-shadow:0 0 6px rgba(239,68,68,.5)}
 .hs-dot.off .hs-dot-ind{background:var(--text4)}
 .hs-count{font-size:11px;color:var(--text4);margin-left:auto}
+/* ═══ OVERVIEW GRID: TOP MODELS + MINI TRAFFIC ═══ */
+.ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media(max-width:900px){.ov-grid{grid-template-columns:1fr}}
+.ov-card{background:var(--card);border:1px solid var(--border-sub);border-radius:16px;overflow:hidden;transition:all .25s cubic-bezier(.4,0,.2,1)}
+.ov-card:hover{border-color:rgba(84,69,203,.2);box-shadow:0 4px 20px rgba(84,69,203,.08)}
+.ov-card-h{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--border-sub);cursor:pointer}
+.ov-card-h:hover{background:var(--card2)}
+.ov-card-h .ov-card-title{font-size:13px;font-weight:600;flex:1}
+.ov-card-h .ov-card-more{font-size:11px;color:var(--text4);display:flex;align-items:center;gap:2px}
+.ov-card-b{padding:10px 16px 14px}
+/* Top models rows */
+.tm-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-sub)}
+.tm-row:last-child{border-bottom:none}
+.tm-rank{width:18px;height:18px;border-radius:6px;background:var(--bg3);color:var(--text3);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tm-rank.top{background:rgba(84,69,203,.14);color:var(--accent)}
+.tm-info{flex:1;min-width:0}
+.tm-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-sub{font-size:10px;color:var(--text4);margin-top:2px}
+.tm-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:5px}
+.tm-bar-fill{height:100%;border-radius:2px}
+.tm-right{text-align:right;flex-shrink:0}
+.tm-rate{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.tm-lat{font-size:10px;color:var(--text4);margin-top:1px}
+/* Mini traffic */
+.mt-bars{display:flex;align-items:flex-end;gap:4px;height:84px;padding-top:6px}
+.mt-bar{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--accent2),var(--accent));opacity:.85;transition:opacity .2s;position:relative;min-width:8px}
+.mt-bar:hover{opacity:1}
+.mt-bar-label{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text3);white-space:nowrap;display:none}
+.mt-bar:hover .mt-bar-label{display:block}
+.mt-axis{display:flex;justify-content:space-between;font-size:9px;color:var(--text4);margin-top:4px}
+.mt-empty{display:flex;align-items:center;justify-content:center;height:84px;color:var(--text3);font-size:12px}
+.mt-total{font-size:11px;color:var(--text4);margin-top:6px;text-align:right}
+
 @media(max-width:480px){
   .hs-dot{max-width:150px;padding:4px 8px;font-size:11px}
   .hs-label{display:none}
@@ -1205,6 +1238,11 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
         <div id="overviewAlerts"></div>
         <!-- PROVIDER HEALTH STRIP -->
         <div id="healthStrip" class="health-strip-wrap"></div>
+        <!-- OVERVIEW BOTTOM GRID: TOP MODELS + MINI TRAFFIC -->
+        <div class="ov-grid">
+          <div id="topModels"></div>
+          <div id="miniTraffic"></div>
+        </div>
         <!-- ACTIVITY FEED -->
         <div class="activity-feed">
           <div class="activity-header"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px;color:var(--accent-h)"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> Recent Activity</div>
@@ -1849,6 +1887,8 @@ function startAutoRefresh(intervalMs){
         renderActivityFeed();
         renderHealthStrip();
         renderOverviewAlerts();
+        renderTopModels();
+        renderMiniTraffic();
         renderProgressRing(sr,100-sr,successColor);
         // Update the stat values inline
         const statVals=document.querySelectorAll('.stat-val');
@@ -1951,6 +1991,63 @@ function renderOverviewAlerts(){
   }).join('');
 }
 
+
+/* ═══ OVERVIEW: Top Models ═══ */
+function renderTopModels(){
+  const el=$('topModels');
+  if(!el)return;
+  api('/api/model-stats').then(function(data){
+    const stats=(data.stats||[]).slice().sort(function(a,b){return (b.total||0)-(a.total||0)}).slice(0,5);
+    const totalReq=stats.reduce(function(s,x){return s+(x.total||0)},0);
+    if(!stats.length){el.innerHTML='';return;}
+    const max=Math.max.apply(null,stats.map(function(x){return x.total||0}))||1;
+    el.innerHTML='<div class="ov-card"><div class="ov-card-h" onclick="navTo(\'modelstats\')"><span class="ov-card-title">🔥 Top Models</span><span class="ov-card-more">Model Stats <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></div><div class="ov-card-b">'
+      + stats.map(function(s,i){
+          var rate=((s.ok||0)/Math.max(1,(s.total||0))*100);
+          var color=rate>=95?'#34D399':rate>=80?'#FBBF24':'#F87171';
+          return '<div class="tm-row"><div class="tm-rank'+(i<3?' top':'')+'">'+(i+1)+'</div>'
+            +'<div class="tm-info"><div class="tm-name" title="'+esc(s.model)+'">'+esc(s.model)+'</div>'
+            +'<div class="tm-sub">'+fmtNum(s.total||0)+' reqs'+(totalReq?' · '+Math.round((s.total||0)/totalReq*100)+'% share':'')+'</div>'
+            +'<div class="tm-bar"><div class="tm-bar-fill" style="width:'+Math.round((s.total||0)/max*100)+'%;background:'+color+'"></div></div></div>'
+            +'<div class="tm-right"><div class="tm-rate" style="color:'+color+'">'+rate.toFixed(0)+'%</div><div class="tm-lat">'+fmtNum(s.avg_ms||0)+'ms</div></div></div>';
+        }).join('')
+      + '</div></div>';
+  }).catch(function(){el.innerHTML='';});
+}
+
+/* ═══ OVERVIEW: Mini Traffic (24h from history) ═══ */
+function renderMiniTraffic(){
+  const el=$('miniTraffic');
+  if(!el)return;
+  const hist=(state.history||[]);
+  if(!hist.length){el.innerHTML='';return;}
+  // bucket per hour: last 12 buckets, key = hour label
+  const now=new Date();
+  const buckets=[];
+  for(let i=11;i>=0;i--){
+    const d=new Date(now.getTime()-i*3600000);
+    const key=d.getHours()+':00';
+    buckets.push({key:key,label:(i%3===0?key:''),count:0});
+  }
+  const idx={};buckets.forEach(function(b,i){idx[b.key]=i;});
+  hist.forEach(function(h){
+    const t=h.ts?h.ts*1000:(h.timestamp||Date.now());
+    const d=new Date(t);
+    const key=d.getHours()+':00';
+    const i=idx[key];
+    if(i!==undefined)buckets[i].count+=(h.requests_per_min||1);
+  });
+  const max=Math.max.apply(null,buckets.map(function(b){return b.count}))||1;
+  const total=buckets.reduce(function(s,b){return s+b.count},0);
+  el.innerHTML='<div class="ov-card"><div class="ov-card-h" onclick="navTo(\'hourlytraffic\')"><span class="ov-card-title">📊 Traffic — Last 12h</span><span class="ov-card-more">Charts <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></div><div class="ov-card-b">'
+    +'<div class="mt-bars">'+buckets.map(function(b){
+        var hgt=Math.max(3,Math.round(b.count/max*80));
+        return '<div class="mt-bar" style="height:'+hgt+'px" title="'+b.key+' — '+fmtNum(b.count)+' reqs"><span class="mt-bar-label">'+fmtNum(b.count)+'</span></div>';
+      }).join('')+'</div>'
+    +'<div class="mt-axis">'+buckets.filter(function(b,i){return i%3===0}).map(function(b){return '<span>'+b.key+'</span>'}).join('')+'</div>'
+    +'<div class="mt-total">'+fmtNum(total)+' requests (est.) · 12h window</div>'
+    +'</div></div>';
+}
 function renderDashboard(){
   const s=state;
   const agg=s.agg||{total:{},today:{}};
@@ -1995,6 +2092,8 @@ function renderDashboard(){
   renderActivityFeed();
   renderHealthStrip();
   renderOverviewAlerts();
+  renderTopModels();
+  renderMiniTraffic();
   renderProgressRing(successRate,100-successRate,successColor);
 }
 function sparkline(series){
