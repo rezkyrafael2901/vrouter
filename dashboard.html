@@ -2219,10 +2219,10 @@ function renderActivityFeed(){
         <th style="width:36px"></th>
         <th>Provider</th>
         <th>Model</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Token In</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Token Out</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Latency</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Time</th>
+        <th style="text-align:right;width:1%;white-space:nowrap;padding-left:26px">Token In</th>
+        <th style="text-align:right;width:1%;white-space:nowrap;padding-left:26px">Token Out</th>
+        <th style="text-align:right;width:1%;white-space:nowrap;padding-left:26px">Latency</th>
+        <th style="text-align:right;width:1%;white-space:nowrap;padding-left:26px">Time</th>
       </tr></thead>
       <tbody>` +
       items.map(it=>{
@@ -2235,10 +2235,10 @@ function renderActivityFeed(){
           <td><span class="act-status ${cls}" style="display:inline-block"></span></td>
           <td class="act-provider">${esc(it.provider||'?')}</td>
           <td class="act-model">${esc(it.model||'—')}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#f5c518">↓ ${pTok.toLocaleString()}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#22c55e">↑ ${cTok.toLocaleString()}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
-          <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#f5c518;padding:11px 22px 11px 26px">↓ ${pTok.toLocaleString()}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#22c55e;padding:11px 22px 11px 26px">↑ ${cTok.toLocaleString()}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;padding:11px 22px 11px 26px">${ms}ms</td>
+          <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px;padding:11px 22px 11px 26px">${timeStr}</td>
         </tr>`;
       }).join('') +
       `</tbody></table></div>`;
@@ -3929,10 +3929,10 @@ function renderLiveRequests() {
         <th style="width:36px"></th>
         <th>Provider</th>
         <th>Model</th>
-        <th style="text-align:right">Token In</th>
-        <th style="text-align:right">Token Out</th>
-        <th style="text-align:right">Latency</th>
-        <th style="text-align:right">Time</th>
+        <th style="text-align:right;width:1%;white-space:nowrap;padding-left:26px">Token In</th>
+        <th style="text-align:right;width:1%;white-space:nowrap;padding-left:26px">Token Out</th>
+        <th style="text-align:right;width:1%;white-space:nowrap;padding-left:26px">Latency</th>
+        <th style="text-align:right;width:1%;white-space:nowrap;padding-left:26px">Time</th>
       </tr></thead>
       <tbody>` +
       history.map(h => {
@@ -3946,10 +3946,10 @@ function renderLiveRequests() {
           <td><span class="act-status ${cls}" style="display:inline-block"></span></td>
           <td class="act-provider">${esc(h.provider||'?')}</td>
           <td class="act-model">${esc(model)}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#f5c518">↓ ${pTok.toLocaleString()}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#22c55e">↑ ${cTok.toLocaleString()}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
-          <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#f5c518;padding:11px 22px 11px 26px">↓ ${pTok.toLocaleString()}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#22c55e;padding:11px 22px 11px 26px">↑ ${cTok.toLocaleString()}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;padding:11px 22px 11px 26px">${ms}ms</td>
+          <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px;padding:11px 22px 11px 26px">${timeStr}</td>
         </tr>`;
       }).join('') +
       `</tbody></table></div>`;
