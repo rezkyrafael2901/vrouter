@@ -1176,7 +1176,6 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
       </div>
       <div class="nav-section">
         <div class="nav-label">System</div>
-    <div class="nav-item" id="nav-modelinsights" onclick="navTo('modelinsights')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Model Insights</span></div>
     <div class="nav-item" id="nav-hourlytraffic" onclick="navTo('hourlytraffic')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/></svg><span>Hourly Traffic</span></div>
     <div class="nav-item" id="nav-alerts" onclick="navTo('alerts')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg><span>Alerts</span></div>
     <div class="nav-item" id="nav-budget" onclick="navTo('budget')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>Budget</span></div>
@@ -1273,10 +1272,10 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 
       <!-- MODEL STATS -->
       <div id="panel-modelstats" class="panel hidden">
-        <div class="section-header"><div><div class="section-title">Model Stats</div><div class="section-sub">Performance</div></div></div>
+        <div class="section-header"><div><div class="section-title">Model Stats</div><div class="section-sub">Per-model performance & usage</div></div></div>
         <div class="card"><div class="card-body"><div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>Model</th><th>Total</th><th>OK</th><th>Err</th><th>Rate</th><th>Avg</th></tr></thead>
-          <tbody id="modelStatsBody"><tr><td colspan="6" style="text-align:center;color:var(--text3)">Loading...</td></tr></tbody>
+          <thead><tr><th style="text-align:right">#</th><th>Model</th><th style="text-align:right">Requests</th><th style="text-align:right">Success</th><th style="text-align:right">Errors</th><th style="text-align:right">Rate</th><th style="text-align:right">Avg</th><th style="text-align:right">Reasoning</th><th style="text-align:right">Last Used</th></tr></thead>
+          <tbody id="modelStatsBody"><tr><td colspan="9" style="text-align:center;color:var(--text3)">Loading...</td></tr></tbody>
         </table></div></div></div>
       </div>
 
@@ -1422,12 +1421,6 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
         </div>
       </div>
 
-
-<!-- ═══ MODEL INSIGHTS ═══ -->
-<div id="panel-modelinsights" class="panel hidden">
-  <div class="section-header"><div><div class="section-title">Model Insights</div><div class="section-sub">Per-model performance</div></div></div>
-  <div class="card"><div class="card-body" id="modelInsightsList"></div></div>
-</div>
 
 <!-- ═══ HOURLY TRAFFIC ═══ -->
 <div id="panel-hourlytraffic" class="panel hidden">
@@ -2322,18 +2315,25 @@ function renderModelStats(){
   const tbody=$('modelStatsBody');
   api('/api/model-stats').then(function(data){
     const stats=data.stats||[];
-    tbody.innerHTML=stats.slice(0,50).map(s=>`
-      <tr>
-        <td style="font-size:12px">${esc(s.model)}</td>
-        <td>${s.total}</td>
-        <td style="color:var(--green)">${s.ok}</td>
-        <td style="color:var(--red)">${s.err}</td>
-        <td>${s.success_rate}%</td>
-        <td>${s.avg_ms}ms</td>
-      </tr>
-    `).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text3)">Belum ada data model</td></tr>';
+    tbody.innerHTML=stats.slice(0,50).map((s,i)=>{
+      const sr = s.success_rate||0;
+      const srColor = sr>=95?'var(--green)':sr>=80?'var(--accent-gold)':'var(--red)';
+      const reasonBadge = s.reasoning?'<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">🧠</span>':'—';
+      const lu = s.last_used?timeAgo(s.last_used):'—';
+      return `<tr>
+        <td style="color:var(--text3)">${i+1}</td>
+        <td style="font-size:12px"><code>${esc(s.model)}</code></td>
+        <td style="text-align:right;font-weight:600">${s.total}</td>
+        <td style="text-align:right;color:var(--green)">${s.ok}</td>
+        <td style="text-align:right;color:var(--red)">${s.err}</td>
+        <td style="text-align:right;color:${srColor};font-weight:600">${sr}%</td>
+        <td style="text-align:right;color:var(--text3)">${s.avg_ms}ms</td>
+        <td style="text-align:right">${reasonBadge}</td>
+        <td style="text-align:right;color:var(--text3);font-size:11px">${lu}</td>
+      </tr>`;
+    }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--text3)">Belum ada data model</td></tr>';
   }).catch(function(){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--red)">Gagal load</td></tr>';
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--red)">Gagal load</td></tr>';
   });
 }
 
@@ -2474,7 +2474,6 @@ function navTo(page,noHist){
     tokspeed:['Tok/s Meter',''],
     circuits:['Circuit Breakers',''],
     usagelogs:['Usage Logs',''],
-    modelinsights:['Model Insights',''],
     hourlytraffic:['Hourly Traffic',''],
     alerts:['Alerts',''],
     budget:['Budget Tracker',''],
@@ -2489,7 +2488,6 @@ function navTo(page,noHist){
   if(page==='modelstats'){renderModelStats();}
   if(page==='circuits')loadCircuits();
   if(page==='healthscore')loadHealthScore();
-  if(page==='modelinsights')renderModelInsights();
   if(page==='hourlytraffic'){renderHourlyTraffic();}
   if(page==='alerts')renderAlerts();
   if(page==='budget'){renderBudget();}
@@ -2502,7 +2500,7 @@ function navTo(page,noHist){
 
 function restoreTab(){
   const hashPage=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','hourlytraffic','alerts','budget','charts','admin','settings'];
   if(hashPage&&valid.includes(hashPage))navTo(hashPage,true);
   else navTo('endpoint',true);
 }
@@ -3032,7 +3030,7 @@ document.addEventListener('touchcancel',function(){
 
 (function init(){
   const hashPage=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','hourlytraffic','alerts','budget','charts','admin','settings'];
   if(hashPage&&valid.includes(hashPage)){curTab=hashPage;navTo(hashPage,true);}
   showAllSkeletons();
   api('/api/status').then(function(){hideLogin();loadAll();startAutoRefresh(30000)}).catch(function(){showLogin()});
@@ -3041,7 +3039,7 @@ document.addEventListener('touchcancel',function(){
 // Keep page on refresh: hash already in URL → restore instantly; back/forward → follow hash
 window.addEventListener('hashchange',function(){
   const h=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','hourlytraffic','alerts','budget','charts','admin','settings'];
   if(h&&valid.includes(h))navTo(h,true);
   else navTo('endpoint',true);
 });
@@ -3686,7 +3684,7 @@ function admShowToast(msg, type) {
 document.addEventListener('keydown', admKeyHandler);
 
 // ══════════════════════════════════════════════════
-// NEW FEATURE PANELS — Live Requests, Model Insights, etc.
+// ─── Live Requests ───
 // ══════════════════════════════════════════════════
 
 // ─── Chart.js instances ───
@@ -3804,26 +3802,6 @@ function timeAgo(ts) {
   const hr = Math.floor(min / 60);
   if (hr < 24) return hr + 'h ago';
   return Math.floor(hr / 24) + 'd ago';
-}
-
-// ─── Model Insights ───
-function renderModelInsights() {
-  const el = document.getElementById('modelInsightsList');
-  if (!el) return;
-  api('/api/model-stats').then(r => {
-    const stats = r.stats || [];
-    if (!stats.length) { el.innerHTML = '<div class="empty-state">No model data</div>'; return; }
-    stats.sort((a,b) => (b.total||0) - (a.total||0));
-    el.innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Model</th><th style="text-align:right">Requests</th><th style="text-align:right">Success</th><th style="text-align:right">Avg Latency</th><th style="text-align:right">Reasoning</th><th style="text-align:right">Last Used</th></tr></thead><tbody>' +
-      stats.map((s,i) => {
-        const sr = s.success_rate || 0;
-        const srColor = sr >= 95 ? 'var(--accent-cyan)' : sr >= 80 ? 'var(--accent-gold)' : 'var(--accent-red)';
-        const reasonBadge = s.reasoning ? '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">🧠</span>' : '—';
-        const lu = s.last_used ? timeAgo(s.last_used) : '—';
-        return `<tr><td style="color:var(--text3)">${i+1}</td><td><code style="font-size:12px">${esc(s.model)}</code></td><td style="text-align:right;font-weight:600">${s.total||0}</td><td style="text-align:right;color:${srColor};font-weight:600">${sr}%</td><td style="text-align:right;color:var(--text3)">${s.avg_ms||0}ms</td><td style="text-align:right">${reasonBadge}</td><td style="text-align:right;color:var(--text3);font-size:11px">${lu}</td></tr>`;
-      }).join('') +
-      '</tbody></table></div>';
-  }).catch(e => { el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; });
 }
 
 // ─── Hourly Traffic ───
