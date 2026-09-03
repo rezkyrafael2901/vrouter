@@ -2715,23 +2715,95 @@ async def api_status(request: Request):
     }
 
 
+def _canonical_model_stats_key(key: str):
+    """Map stale provider prefixes to the active provider they belong to.
+
+    MODEL_STATS is keyed 'provider/model'. Old provider names (e.g.
+    'openai-compatible-jerouter', 'openai-compatible-chat-1bb0...') survive in
+    router_state.json even after the provider was deleted/renamed. We remap
+    them by prefix so stats show under the active provider name (VRouter).
+    Returns None if the key's provider is not active anymore.
+    """
+    if "/" not in key:
+        return None
+    prov_part, _, model_part = key.partition("/")
+    # Direct active provider match
+    if prov_part in PROVIDERS:
+        return key
+    # Prefix alias: match active provider whose prefix == old provider name
+    # (e.g. prefix JEROUTER -> provider VRouter) or whose name is the prefix
+    # source (openai-compatible-jerouter -> VRouter).
+    for name, p in PROVIDERS.items():
+        if p.prefix and p.prefix.lower() == prov_part.lower():
+            return f"{name}/{model_part}"
+        # openai-compatible-<prefix> was the auto-generated name for a
+        # provider whose prefix is <prefix> (e.g. openai-compatible-jerouter).
+        if prov_part.lower().startswith("openai-compatible-"):
+            stripped = prov_part[len("openai-compatible-"):].lower()
+            if stripped and (stripped == p.prefix.lower() or stripped == name.lower()):
+                return f"{name}/{model_part}"
+    return None
+
+
 @app.get("/api/model-stats")
 async def api_model_stats(request: Request):
     check_dashboard_auth(request)
-    stats = []
+    # Active model universe: provider effective/manual models + combo routes.
+    # Anything outside it is a stale model from a deleted config.
+    active_models: set[str] = set()
+    for p in PROVIDERS.values():
+        active_models.update(p.effective_models)
+        active_models.update(p.manual_models)
+    for combo in COMBOS.values():
+        for r in combo.get("routes", []):
+            if r.get("model"):
+                active_models.add(r["model"])
+    merged: dict[str, dict] = {}
     for key, s in MODEL_STATS.items():
-        avg = round(s["latency_sum"] / s["total"], 1) if s["total"] else 0
-        success_rate = round(s["ok"] / s["total"] * 100, 1) if s["total"] else 0
+        canon = _canonical_model_stats_key(key)
+        if not canon:
+            continue  # stale provider, not active anymore
+        # drop models no longer in the active universe (deleted from config)
+        if "/" in canon:
+            _, _, model_part = canon.partition("/")
+            if model_part not in active_models:
+                continue
+        # merge under canonical key
+        if canon not in merged:
+            merged[canon] = {
+                "total": 0, "ok": 0, "err": 0,
+                "latency_sum": 0.0, "latency_min": 999999, "latency_max": 0,
+                "reasoning": False, "last_error": None, "last_used": 0.0,
+                "ema_latency_ms": 0.0, "ema_success": 0.5, "samples": 0,
+            }
+        m = merged[canon]
+        m["total"] += s["total"]
+        m["ok"] += s["ok"]
+        m["err"] += s["err"]
+        m["latency_sum"] += s["latency_sum"]
+        m["latency_min"] = min(m["latency_min"], s["latency_min"])
+        m["latency_max"] = max(m["latency_max"], s["latency_max"])
+        m["reasoning"] = m["reasoning"] or s["reasoning"]
+        m["last_used"] = max(m["last_used"], s.get("last_used", 0))
+        if s.get("last_error"):
+            m["last_error"] = s["last_error"]
+        m["ema_latency_ms"] = m["ema_latency_ms"] + s.get("ema_latency_ms", 0)
+        m["ema_success"] = m["ema_success"] + s.get("ema_success", 0)
+        m["samples"] += s.get("samples", 0)
+    stats = []
+    for key, m in merged.items():
+        avg = round(m["latency_sum"] / m["total"], 1) if m["total"] else 0
+        success_rate = round(m["ok"] / m["total"] * 100, 1) if m["total"] else 0
+        n = max(1, len([k for k in MODEL_STATS if _canonical_model_stats_key(k) == key]))
         stats.append({
-            "model": key, "total": s["total"], "ok": s["ok"], "err": s["err"],
-            "avg_ms": avg, "min_ms": s["latency_min"] if s["latency_min"] < 999999 else 0,
-            "max_ms": s["latency_max"], "success_rate": success_rate,
-            "reasoning": s["reasoning"], "last_error": s["last_error"],
-            "last_used": s["last_used"],
-            # Phase 4 — EMA (reaktif ke kondisi terkini)
-            "ema_latency_ms": round(s.get("ema_latency_ms", avg), 1),
-            "ema_success": round(s.get("ema_success", success_rate / 100.0), 3),
-            "samples": s.get("samples", 0),
+            "model": key, "total": m["total"], "ok": m["ok"], "err": m["err"],
+            "avg_ms": avg, "min_ms": m["latency_min"] if m["latency_min"] < 999999 else 0,
+            "max_ms": m["latency_max"], "success_rate": success_rate,
+            "reasoning": m["reasoning"], "last_error": m["last_error"],
+            "last_used": m["last_used"],
+            "ema_latency_ms": round(m["ema_latency_ms"] / n, 1),
+            "ema_success": round(m["ema_success"] / n, 3),
+            "samples": m["samples"],
         })
     stats.sort(key=lambda x: x["total"], reverse=True)
     return {"stats": stats, "total_models": len(stats),

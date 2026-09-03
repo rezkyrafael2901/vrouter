@@ -1924,6 +1924,12 @@ function fmtNum(n){
   if(n>=1e3)return (n/1e3).toFixed(1)+'k';
   return String(n);
 }
+function fmtMs(ms){
+  ms=ms||0;
+  if(ms>=60000)return (ms/60000).toFixed(1)+'m';
+  if(ms>=1000)return (ms/1000).toFixed(1)+'s';
+  return Math.round(ms)+'ms';
+}
 function fmtCost(c){
   c=c||0;
   if(c===0)return '$0';
@@ -2010,7 +2016,7 @@ function renderTopModels(){
             +'<div class="tm-info"><div class="tm-name" title="'+esc(s.model)+'">'+esc(s.model)+'</div>'
             +'<div class="tm-sub">'+fmtNum(s.total||0)+' reqs'+(totalReq?' · '+Math.round((s.total||0)/totalReq*100)+'% share':'')+'</div>'
             +'<div class="tm-bar"><div class="tm-bar-fill" style="width:'+Math.round((s.total||0)/max*100)+'%;background:'+color+'"></div></div></div>'
-            +'<div class="tm-right"><div class="tm-rate" style="color:'+color+'">'+rate.toFixed(0)+'%</div><div class="tm-lat">'+fmtNum(s.avg_ms||0)+'ms</div></div></div>';
+            +'<div class="tm-right"><div class="tm-rate" style="color:'+color+'">'+rate.toFixed(0)+'%</div><div class="tm-lat">'+fmtMs(s.avg_ms||0)+'</div></div></div>';
         }).join('')
       + '</div></div>';
   }).catch(function(){el.innerHTML='';});
