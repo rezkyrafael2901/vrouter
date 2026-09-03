@@ -2546,9 +2546,9 @@ function exportUsageLogs(){
   var a=document.createElement('a');a.href=url;a.download='usage-logs-'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();URL.revokeObjectURL(url);toast('CSV exported');
 }
-function navTo(page){
+function navTo(page,noHist){
   curTab=page;
-  if(history.pushState){
+  if(history.pushState&&!noHist){
     const hash=page==='endpoint'?'':'#'+page;
     window.history.pushState({page},'',hash);
   }
@@ -2605,8 +2605,8 @@ function navTo(page){
 function restoreTab(){
   const hashPage=window.location.hash.slice(1);
   const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','liverequests','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
-  if(hashPage&&valid.includes(hashPage))navTo(hashPage);
-  else navTo('endpoint');
+  if(hashPage&&valid.includes(hashPage))navTo(hashPage,true);
+  else navTo('endpoint',true);
 }
 
 function toggleSidebar(){$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show')}
@@ -3135,10 +3135,18 @@ document.addEventListener('touchcancel',function(){
 (function init(){
   const hashPage=window.location.hash.slice(1);
   const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','liverequests','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
-  if(hashPage&&valid.includes(hashPage))curTab=hashPage;
+  if(hashPage&&valid.includes(hashPage)){curTab=hashPage;navTo(hashPage,true);}
   showAllSkeletons();
   api('/api/status').then(function(){hideLogin();loadAll();startAutoRefresh(30000)}).catch(function(){showLogin()});
 })();
+
+// Keep page on refresh: hash already in URL → restore instantly; back/forward → follow hash
+window.addEventListener('hashchange',function(){
+  const h=window.location.hash.slice(1);
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','liverequests','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
+  if(h&&valid.includes(h))navTo(h,true);
+  else navTo('endpoint',true);
+});
 
 // ═══════════════════════════════════════
 // NEW FEATURES — injected by VIREX
