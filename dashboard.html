@@ -3819,7 +3819,7 @@ function renderModelInsights() {
         const sr = s.success_rate || 0;
         const srColor = sr >= 95 ? 'var(--accent-cyan)' : sr >= 80 ? 'var(--accent-gold)' : 'var(--accent-red)';
         const reasonBadge = s.reasoning ? '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">🧠</span>' : '—';
-        const lu = s.last_used ? formatAge(s.last_used) : '—';
+        const lu = s.last_used ? timeAgo(s.last_used) : '—';
         return `<tr><td style="color:var(--text3)">${i+1}</td><td><code style="font-size:12px">${esc(s.model)}</code></td><td style="text-align:right;font-weight:600">${s.total||0}</td><td style="text-align:right;color:${srColor};font-weight:600">${sr}%</td><td style="text-align:right;color:var(--text3)">${s.avg_ms||0}ms</td><td style="text-align:right">${reasonBadge}</td><td style="text-align:right;color:var(--text3);font-size:11px">${lu}</td></tr>`;
       }).join('') +
       '</tbody></table></div>';
