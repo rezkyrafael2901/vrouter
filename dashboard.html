@@ -3810,13 +3810,18 @@ function timeAgo(ts) {
 function renderModelInsights() {
   const el = document.getElementById('modelInsightsList');
   if (!el) return;
-  api('/api/status').then(r => {
-    const models = r.models || {};
-    const entries = Object.entries(models);
-    if (!entries.length) { el.innerHTML = '<div class="empty-state">No model data</div>'; return; }
-    entries.sort((a,b) => (b[1].requests||0) - (a[1].requests||0));
-    el.innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Model</th><th>Requests</th><th>Avg Latency</th><th>Tokens</th></tr></thead><tbody>' +
-      entries.map(([k,v]) => `<tr><td>${esc(k)}</td><td>${v.requests||0}</td><td>${Math.round(v.avg_latency||0)}ms</td><td>${v.tokens||0}</td></tr>`).join('') +
+  api('/api/model-stats').then(r => {
+    const stats = r.stats || [];
+    if (!stats.length) { el.innerHTML = '<div class="empty-state">No model data</div>'; return; }
+    stats.sort((a,b) => (b.total||0) - (a.total||0));
+    el.innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Model</th><th style="text-align:right">Requests</th><th style="text-align:right">Success</th><th style="text-align:right">Avg Latency</th><th style="text-align:right">Reasoning</th><th style="text-align:right">Last Used</th></tr></thead><tbody>' +
+      stats.map((s,i) => {
+        const sr = s.success_rate || 0;
+        const srColor = sr >= 95 ? 'var(--accent-cyan)' : sr >= 80 ? 'var(--accent-gold)' : 'var(--accent-red)';
+        const reasonBadge = s.reasoning ? '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">🧠</span>' : '—';
+        const lu = s.last_used ? formatAge(s.last_used) : '—';
+        return `<tr><td style="color:var(--text3)">${i+1}</td><td><code style="font-size:12px">${esc(s.model)}</code></td><td style="text-align:right;font-weight:600">${s.total||0}</td><td style="text-align:right;color:${srColor};font-weight:600">${sr}%</td><td style="text-align:right;color:var(--text3)">${s.avg_ms||0}ms</td><td style="text-align:right">${reasonBadge}</td><td style="text-align:right;color:var(--text3);font-size:11px">${lu}</td></tr>`;
+      }).join('') +
       '</tbody></table></div>';
   }).catch(e => { el.innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; });
 }
