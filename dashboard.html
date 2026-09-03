@@ -3918,11 +3918,10 @@ function renderLiveRequests() {
         <th style="width:36px"></th>
         <th>Provider</th>
         <th>Model</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Token In</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Token Out</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Latency</th>
-        <th style="width:1%;white-space:nowrap">Status</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Time</th>
+        <th style="text-align:right">Token In</th>
+        <th style="text-align:right">Token Out</th>
+        <th style="text-align:right">Latency</th>
+        <th style="text-align:right">Time</th>
       </tr></thead>
       <tbody>` +
       history.map(h => {
@@ -3932,11 +3931,6 @@ function renderLiveRequests() {
         const pTok = h.prompt_tokens || 0;
         const cTok = h.completion_tokens || 0;
         const timeStr = h.ts ? timeAgo(h.ts) : '—';
-        const ok = h.status === 'ok' || (h.code >= 200 && h.code < 300);
-        const codeStr = (h.code && h.code > 0) ? h.code : (ok ? 200 : 'ERR');
-        const statusHtml = ok
-          ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.14);color:#22c55e">${codeStr} OK</span>`
-          : `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(239,68,68,0.14);color:#ef4444">${codeStr}</span>`;
         return `<tr>
           <td><span class="act-status ${cls}" style="display:inline-block"></span></td>
           <td class="act-provider">${esc(h.provider||'?')}</td>
@@ -3944,7 +3938,6 @@ function renderLiveRequests() {
           <td style="text-align:right;font-variant-numeric:tabular-nums;color:#f5c518">↓ ${pTok.toLocaleString()}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums;color:#22c55e">↑ ${cTok.toLocaleString()}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
-          <td style="padding-left:18px">${statusHtml}</td>
           <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
         </tr>`;
       }).join('') +
