@@ -1188,7 +1188,6 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
       </div>
       <div class="nav-section">
         <div class="nav-label">System</div>
-        <div class="nav-item" id="nav-liverequests" onclick="navTo('liverequests')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span>Live Requests</span></div>
     <div class="nav-item" id="nav-modelinsights" onclick="navTo('modelinsights')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Model Insights</span></div>
     <div class="nav-item" id="nav-hourlytraffic" onclick="navTo('hourlytraffic')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/></svg><span>Hourly Traffic</span></div>
     <div class="nav-item" id="nav-alerts" onclick="navTo('alerts')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg><span>Alerts</span></div>
@@ -1435,12 +1434,6 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
         </div>
       </div>
 
-
-<!-- ═══ LIVE REQUESTS ═══ -->
-<div id="panel-liverequests" class="panel hidden">
-  <div class="section-header"><div><div class="section-title">Live Requests</div><div class="section-sub">Real-time request feed</div></div></div>
-  <div class="card"><div class="card-body" id="liveRequestsList" style="max-height:480px;overflow-y:auto"></div></div>
-</div>
 
 <!-- ═══ MODEL INSIGHTS ═══ -->
 <div id="panel-modelinsights" class="panel hidden">
@@ -2515,7 +2508,6 @@ function navTo(page,noHist){
     tokspeed:['Tok/s Meter',''],
     circuits:['Circuit Breakers',''],
     usagelogs:['Usage Logs',''],
-    liverequests:['Live Requests',''],
     modelinsights:['Model Insights',''],
     hourlytraffic:['Hourly Traffic',''],
     alerts:['Alerts',''],
@@ -2531,7 +2523,6 @@ function navTo(page,noHist){
   if(page==='modelstats'){renderModelStats();}
   if(page==='circuits')loadCircuits();
   if(page==='healthscore')loadHealthScore();
-  if(page==='liverequests')renderLiveRequests();
   if(page==='modelinsights')renderModelInsights();
   if(page==='hourlytraffic'){renderHourlyTraffic();}
   if(page==='alerts')renderAlerts();
@@ -2545,7 +2536,7 @@ function navTo(page,noHist){
 
 function restoreTab(){
   const hashPage=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','liverequests','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
   if(hashPage&&valid.includes(hashPage))navTo(hashPage,true);
   else navTo('endpoint',true);
 }
@@ -3075,7 +3066,7 @@ document.addEventListener('touchcancel',function(){
 
 (function init(){
   const hashPage=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','liverequests','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
   if(hashPage&&valid.includes(hashPage)){curTab=hashPage;navTo(hashPage,true);}
   showAllSkeletons();
   api('/api/status').then(function(){hideLogin();loadAll();startAutoRefresh(30000)}).catch(function(){showLogin()});
@@ -3084,7 +3075,7 @@ document.addEventListener('touchcancel',function(){
 // Keep page on refresh: hash already in URL → restore instantly; back/forward → follow hash
 window.addEventListener('hashchange',function(){
   const h=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','liverequests','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','modelinsights','hourlytraffic','alerts','budget','charts','admin','settings'];
   if(h&&valid.includes(h))navTo(h,true);
   else navTo('endpoint',true);
 });
@@ -3847,41 +3838,6 @@ function timeAgo(ts) {
   const hr = Math.floor(min / 60);
   if (hr < 24) return hr + 'h ago';
   return Math.floor(hr / 24) + 'd ago';
-}
-function renderLiveRequests() {
-  const el = document.getElementById('liveRequestsList');
-  if (!el) return;
-  api('/api/status').then(r => {
-    const history = (r.history || []).slice(-30).reverse();
-    if (!history.length) { el.innerHTML = '<div class="empty-state">No recent requests</div>'; return; }
-    el.innerHTML = `<div class="tbl-wrap"><table class="tbl" style="min-width:600px">
-      <thead><tr>
-        <th style="width:36px"></th>
-        <th>Provider</th>
-        <th>Model</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Token In</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Token Out</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Time</th>
-      </tr></thead>
-      <tbody>` +
-      history.map(h => {
-        const model = h.model || '—';
-        const ms = h.ms || 0;
-        const cls = ms > 5000 ? 'err' : ms > 2000 ? 'slow' : 'ok';
-        const pTok = h.prompt_tokens || 0;
-        const cTok = h.completion_tokens || 0;
-        const timeStr = h.ts ? timeAgo(h.ts) : '—';
-        return `<tr>
-          <td><span class="act-status ${cls}" style="display:inline-block"></span></td>
-          <td class="act-provider">${esc(h.provider||'?')}</td>
-          <td class="act-model">${esc(model)}</td>
-          <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;color:#f5c518">↓ ${pTok.toLocaleString()}</td>
-          <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;color:#22c55e">↑ ${cTok.toLocaleString()}</td>
-          <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
-        </tr>`;
-      }).join('') +
-      `</tbody></table></div>`;
-  }).catch(e => { el.innerHTML = '<div class="empty-state">Error loading: ' + e.message + '</div>'; });
 }
 
 // ─── Model Insights ───
