@@ -2214,13 +2214,12 @@ function renderActivityFeed(){
     const el=$('activityFeed');
     if(!el)return;
     if(!items.length){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:20px;font-size:13px">Belum ada activity</div>';return}
-    el.innerHTML=`<div class="tbl-wrap"><table class="tbl" style="min-width:600px">
+    el.innerHTML=`<div class="tbl-wrap"><table class="tbl" style="min-width:560px">
       <thead><tr>
         <th style="width:36px"></th>
         <th>Provider</th>
         <th>Model</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Token In</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Token Out</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Token In/Out</th>
         <th style="text-align:right;width:1%;white-space:nowrap">Latency</th>
         <th style="text-align:right;width:1%;white-space:nowrap">Time</th>
       </tr></thead>
@@ -2235,8 +2234,7 @@ function renderActivityFeed(){
           <td><span class="act-status ${cls}" style="display:inline-block"></span></td>
           <td class="act-provider">${esc(it.provider||'?')}</td>
           <td class="act-model">${esc(it.model||'—')}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#f5c518">↓ ${pTok.toLocaleString()}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#22c55e">↑ ${cTok.toLocaleString()}</td>
+          <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums"><span style="color:#f5c518">↓ ${pTok.toLocaleString()}</span> <span style="color:#22c55e">↑ ${cTok.toLocaleString()}</span></td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
           <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
         </tr>`;
@@ -3924,15 +3922,14 @@ function renderLiveRequests() {
   api('/api/status').then(r => {
     const history = (r.history || []).slice(-30).reverse();
     if (!history.length) { el.innerHTML = '<div class="empty-state">No recent requests</div>'; return; }
-    el.innerHTML = `<div class="tbl-wrap"><table class="tbl" style="min-width:640px">
+    el.innerHTML = `<div class="tbl-wrap"><table class="tbl" style="min-width:600px">
       <thead><tr>
         <th style="width:36px"></th>
         <th>Provider</th>
         <th>Model</th>
-        <th style="text-align:right">Token In</th>
-        <th style="text-align:right">Token Out</th>
-        <th style="text-align:right">Latency</th>
-        <th style="text-align:right">Time</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Token In/Out</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Latency</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Time</th>
       </tr></thead>
       <tbody>` +
       history.map(h => {
@@ -3946,8 +3943,7 @@ function renderLiveRequests() {
           <td><span class="act-status ${cls}" style="display:inline-block"></span></td>
           <td class="act-provider">${esc(h.provider||'?')}</td>
           <td class="act-model">${esc(model)}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#f5c518">↓ ${pTok.toLocaleString()}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:#22c55e">↑ ${cTok.toLocaleString()}</td>
+          <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums"><span style="color:#f5c518">↓ ${pTok.toLocaleString()}</span> <span style="color:#22c55e">↑ ${cTok.toLocaleString()}</span></td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
           <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
         </tr>`;
