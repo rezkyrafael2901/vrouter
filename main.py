@@ -3277,17 +3277,29 @@ async def health_score(request: Request):
       • latency    (EMA latency, lower=better) weight 25
       • throughput (tok/s from stream meter)   weight 20
       • freshness  (recently used / not stale)  weight 10
-    Circuit-open providers are penalised. Ranked best-first."""
+    Circuit-open providers are penalised. Ranked best-first.
+
+    Optional ?provider=<name> filters to a single provider (e.g. ?provider=VRouter).
+    By default only shows models from providers currently registered & active."""
     check_dashboard_auth(request)
     now = time.time()
+    filter_prov = (request.query_params.get("provider") or "").strip()
     # provider lock state for penalty
     locked = {p.name: (p.locked_until > now) for p in PROVIDERS.values()}
+    active_providers = set(PROVIDERS.keys())
     rows = []
     for key, s in MODEL_STATS.items():
         prov = key.split("/", 1)[0]
         total = s.get("total", 0)
         if not total:
             continue
+        # Filter: only active registered providers, or specific provider if requested
+        if filter_prov:
+            if prov != filter_prov:
+                continue
+        else:
+            if prov not in active_providers:
+                continue
         ema_succ = s.get("ema_success", s.get("ok", 0) / total if total else 0.0)
         ema_lat = s.get("ema_latency_ms", (s["latency_sum"] / total) if total else 0.0)
         # reliability: 0-45
@@ -3315,7 +3327,7 @@ async def health_score(request: Request):
             "age_s": int(age) if s.get("last_used") else None,
         })
     rows.sort(key=lambda r: -r["score"])
-    return {"ok": True, "ts": now, "count": len(rows), "models": rows}
+    return {"ok": True, "ts": now, "count": len(rows), "models": rows, "filtered_provider": filter_prov or None}
 
 
 @app.get("/api/costs")

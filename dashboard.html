@@ -497,6 +497,39 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .kpi-card{background:var(--card);border:1px solid var(--border-sub);border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:14px;transition:all .25s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--teal));opacity:0;transition:opacity .3s}
 .kpi-card:hover{border-color:rgba(84,69,203,.2);box-shadow:0 4px 20px rgba(84,69,203,.08);transform:translateY(-2px)}
+/* ═══ OVERVIEW ALERT BANNER ═══ */
+#overviewAlerts{margin-bottom:12px}
+.ov-alert{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:500;margin-bottom:8px;border:1px solid;cursor:pointer;transition:all .2s}
+.ov-alert:active{transform:scale(.99)}
+.ov-alert .ov-alert-ico{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.ov-alert .ov-alert-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ov-alert .ov-alert-tag{font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:99px;flex-shrink:0;font-weight:700}
+.ov-alert.crit{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.28);color:var(--red)}
+.ov-alert.warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.28);color:var(--amber)}
+.ov-alert .ov-alert-tag.crit{background:var(--red);color:#fff}
+.ov-alert .ov-alert-tag.warn{background:var(--amber);color:#fff}
+/* ═══ PROVIDER HEALTH STRIP ═══ */
+.health-strip-wrap{margin-bottom:16px}
+.health-strip{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;background:var(--card);border:1px solid var(--border-sub);border-radius:14px;align-items:center}
+.hs-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-right:4px}
+.hs-dot{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border-sub);background:var(--card2);transition:all .2s;max-width:180px}
+.hs-dot:active{transform:scale(.95)}
+.hs-dot .hs-dot-ind{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.hs-dot .hs-dot-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hs-dot.ok{color:var(--green)}
+.hs-dot.degraded{color:var(--amber)}
+.hs-dot.down{color:var(--red)}
+.hs-dot.off{color:var(--text4);opacity:.6}
+.hs-dot.ok .hs-dot-ind{background:var(--green);box-shadow:0 0 6px rgba(16,185,129,.5)}
+.hs-dot.degraded .hs-dot-ind{background:var(--amber);box-shadow:0 0 6px rgba(245,158,11,.5)}
+.hs-dot.down .hs-dot-ind{background:var(--red);box-shadow:0 0 6px rgba(239,68,68,.5)}
+.hs-dot.off .hs-dot-ind{background:var(--text4)}
+.hs-count{font-size:11px;color:var(--text4);margin-left:auto}
+@media(max-width:480px){
+  .hs-dot{max-width:150px;padding:4px 8px;font-size:11px}
+  .hs-label{display:none}
+  .ov-alert .ov-alert-txt{white-space:normal}
+}
 .kpi-card:hover::before{opacity:1}
 .kpi-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .kpi-icon svg{width:20px;height:20px}
@@ -1168,6 +1201,10 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
       <!-- DASHBOARD -->
       <div id="panel-endpoint" class="panel">
         <div class="kpi-row" id="kpiRow"></div>
+        <!-- OVERVIEW ALERT BANNER -->
+        <div id="overviewAlerts"></div>
+        <!-- PROVIDER HEALTH STRIP -->
+        <div id="healthStrip" class="health-strip-wrap"></div>
         <!-- ACTIVITY FEED -->
         <div class="activity-feed">
           <div class="activity-header"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px;color:var(--accent-h)"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> Recent Activity</div>
@@ -1810,6 +1847,8 @@ function startAutoRefresh(intervalMs){
         // Only re-render stats + activity, not full reload
         const successColor=sr>=95?'#34D399':sr>=80?'#FBBF24':'#F87171';
         renderActivityFeed();
+        renderHealthStrip();
+        renderOverviewAlerts();
         renderProgressRing(sr,100-sr,successColor);
         // Update the stat values inline
         const statVals=document.querySelectorAll('.stat-val');
@@ -1849,6 +1888,67 @@ function fmtCost(c){
   if(c===0)return '$0';
   if(c<0.01)return '$'+c.toFixed(4);
   return '$'+c.toFixed(2);
+}
+
+
+/* ═══ OVERVIEW: Provider Health Strip ═══ */
+function renderHealthStrip(){
+  const el=$('healthStrip');
+  if(!el)return;
+  const provs=(state.providers||[]);
+  if(!provs.length){el.innerHTML='';return}
+  const now=Date.now()/1000;
+  let okN=0,degN=0,downN=0,offN=0;
+  const dots=provs.map(p=>{
+    const locked=p.locked_until>now;
+    const fail=p.failures||0;
+    const active=p.is_active!==false;
+    let cls='off',label='OFF';
+    if(!active){offN++;cls='off';label='Off'}
+    else if(locked||fail>=5){downN++;cls='down';label='Down'}
+    else if(fail>0){degN++;cls='degraded';label='Slow'}
+    else{okN++;cls='ok';label='OK'}
+    return '<div class="hs-dot '+cls+'" onclick="navTo(\'health\')" title="'+esc(p.name)+' — '+label+' (failures: '+fail+')">'
+      +'<span class="hs-dot-ind"></span><span class="hs-dot-name">'+esc(p.name)+'</span></div>';
+  }).join('');
+  const count='<span class="hs-count">'+okN+' ok · '+degN+' slow · '+downN+' down'+(offN?' · '+offN+' off':'')+'</span>';
+  el.innerHTML='<div class="health-strip"><span class="hs-label">Providers</span>'+dots+count+'</div>';
+}
+
+/* ═══ OVERVIEW: Alert/Circuit Banner ═══ */
+function renderOverviewAlerts(){
+  const el=$('overviewAlerts');
+  if(!el)return;
+  const alerts=[];
+  const provs=(state.providers||[]);
+  const now=Date.now()/1000;
+  provs.forEach(p=>{
+    if(p.locked_until>now){
+      const sec=Math.max(1,Math.ceil(p.locked_until-now));
+      alerts.push({sev:'crit',txt:p.name+' circuit OPEN — locked '+sec+'s',tag:'CIRCUIT'});
+    }else if((p.failures||0)>=3){
+      alerts.push({sev:'warn',txt:p.name+' failing ('+(p.failures||0)+' consecutive)',tag:'DEGRADED'});
+    }
+  });
+  // last-error flash from history (recent errors in last 60s)
+  const hist=(state.history||[]);
+  const recentErr=(hist||[]).filter(h=>h.ts&&h.ts>now-60&&h.status&&h.status!=='ok'&&h.status!=='hedge_ok');
+  const errByProv={};
+  recentErr.forEach(h=>{const k=h.provider||'?';errByProv[k]=(errByProv[k]||0)+1});
+  Object.keys(errByProv).forEach(k=>{
+    if(!provs.some(p=>p.name===k&&p.locked_until>now)){
+      alerts.push({sev:'warn',txt:k+' — '+errByProv[k]+' error(s) last 60s',tag:'ERRORS'});
+    }
+  });
+  if(!alerts.length){el.innerHTML='';return}
+  el.innerHTML=alerts.slice(0,4).map(a=>{
+    const ico=a.sev==='crit'
+      ?'<svg class="ov-alert-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>'
+      :'<svg class="ov-alert-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0L3.16 16.25A2 2 0 005 19z"/></svg>';
+    return '<div class="ov-alert '+a.sev+'" onclick="navTo(\'alerts\')">'+ico
+      +'<span class="ov-alert-txt">'+esc(a.txt)+'</span>'
+      +'<span class="ov-alert-tag '+a.sev+'">'+a.tag+'</span></div>';
+  }).join('');
 }
 
 function renderDashboard(){
@@ -1893,6 +1993,8 @@ function renderDashboard(){
   }).join('');
 
   renderActivityFeed();
+  renderHealthStrip();
+  renderOverviewAlerts();
   renderProgressRing(successRate,100-successRate,successColor);
 }
 function sparkline(series){
@@ -2168,17 +2270,21 @@ function renderProxies(){
 
 function renderModelStats(){
   const tbody=$('modelStatsBody');
-  const stats=(state.model_stats||[]);
-  tbody.innerHTML=stats.slice(0,50).map(s=>`
-    <tr>
-      <td style="font-size:12px">${esc(s.model)}</td>
-      <td>${s.total}</td>
-      <td style="color:var(--green)">${s.ok}</td>
-      <td style="color:var(--red)">${s.err}</td>
-      <td>${s.success_rate}%</td>
-      <td>${s.avg_ms}ms</td>
-    </tr>
-  `).join('');
+  api('/api/model-stats').then(function(data){
+    const stats=data.stats||[];
+    tbody.innerHTML=stats.slice(0,50).map(s=>`
+      <tr>
+        <td style="font-size:12px">${esc(s.model)}</td>
+        <td>${s.total}</td>
+        <td style="color:var(--green)">${s.ok}</td>
+        <td style="color:var(--red)">${s.err}</td>
+        <td>${s.success_rate}%</td>
+        <td>${s.avg_ms}ms</td>
+      </tr>
+    `).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text3)">Belum ada data model</td></tr>';
+  }).catch(function(){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--red)">Gagal load</td></tr>';
+  });
 }
 
 function renderHealth(){
@@ -2334,6 +2440,7 @@ function navTo(page){
   if($('pageSub'))$('pageSub').textContent=titles[page][1]||'';
   if(page==='usagelogs'){filterUsageLogs();setTimeout(initUsageProviders,800)}
   if(page==='tokspeed')loadTokSpeed();
+  if(page==='modelstats'){renderModelStats();}
   if(page==='circuits')loadCircuits();
   if(page==='healthscore')loadHealthScore();
   if(page==='liverequests')renderLiveRequests();
@@ -2780,7 +2887,7 @@ function hsGrade(g){
   return `<span style="display:inline-block;min-width:24px;padding:2px 8px;border-radius:6px;background:${c}22;color:${c};font-weight:700;font-size:12px">${g}</span>`;
 }
 function loadHealthScore(){
-  api('/api/health-score').then(d=>{
+  api('/api/health-score?provider=VRouter').then(d=>{
     const rows=d.models||[];
     $('hsSub').textContent=`${d.count} model${d.count===1?'':'s'} scored · reliability 45 · latency 25 · tok/s 20 · freshness 10`;
     $('healthScoreBody').innerHTML=rows.length?rows.map((r,i)=>{
