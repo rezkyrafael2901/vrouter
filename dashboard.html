@@ -527,7 +527,10 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .hs-count{font-size:11px;color:var(--text4);margin-left:auto}
 /* ═══ OVERVIEW GRID: TOP MODELS + MINI TRAFFIC ═══ */
 .ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
-.ov-grid>div{min-width:0}
+.ov-grid>div{min-width:0;display:flex}
+.ov-grid>div>.ov-card{flex:1;height:100%;display:flex;flex-direction:column}
+.mt-card .ov-card-b{flex:1;display:flex;flex-direction:column}
+.mt-card .mt-visual{flex:1;min-height:96px}
 @media(max-width:900px){.ov-grid{grid-template-columns:1fr}}
 .ov-card{background:var(--card);border:1px solid var(--border-sub);border-radius:16px;overflow:hidden;transition:all .25s cubic-bezier(.4,0,.2,1)}
 .ov-card:hover{border-color:rgba(84,69,203,.2);box-shadow:0 4px 20px rgba(84,69,203,.08)}
@@ -549,15 +552,29 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .tm-right{text-align:right;flex-shrink:0}
 .tm-rate{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
 .tm-lat{font-size:10px;color:var(--text4);margin-top:1px}
-/* Mini traffic */
-.mt-bars{display:flex;align-items:flex-end;gap:4px;height:84px;padding-top:6px}
-.mt-bar{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--accent2),var(--accent));opacity:.85;transition:opacity .2s;position:relative;min-width:8px}
-.mt-bar:hover{opacity:1}
-.mt-bar-label{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text3);white-space:nowrap;display:none}
-.mt-bar:hover .mt-bar-label{display:block}
-.mt-axis{display:flex;justify-content:space-between;font-size:9px;color:var(--text4);margin-top:4px}
-.mt-empty{display:flex;align-items:center;justify-content:center;height:84px;color:var(--text3);font-size:12px}
-.mt-total{font-size:11px;color:var(--text4);margin-top:6px;text-align:right}
+/* ═══ MINI TRAFFIC — TECH HUD STYLE ═══ */
+.mt-card{display:flex;flex-direction:column;height:100%}
+.mt-visual{position:relative;height:96px;border-radius:10px;overflow:hidden;background:
+  linear-gradient(180deg,rgba(84,69,203,0.06),rgba(70,149,254,0.03) 60%,transparent);
+  border:1px solid var(--border-sub);margin:2px 0 6px}
+.mt-grid{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(84,69,203,0.07) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(84,69,203,0.07) 1px,transparent 1px);
+  background-size:24px 24px;pointer-events:none}
+.mt-scan{position:absolute;top:0;bottom:0;width:2px;background:linear-gradient(180deg,transparent,var(--accent2),transparent);
+  box-shadow:0 0 8px var(--accent2),0 0 16px var(--accent2);opacity:.5;pointer-events:none;
+  animation:mtScan 5s linear infinite}
+@keyframes mtScan{0%{left:-4px}100%{left:100%}}
+.mt-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mt-line{fill:none;stroke:url(#mtGrad);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 4px var(--accent2)) drop-shadow(0 0 8px rgba(84,69,203,0.6))}
+.mt-area{fill:url(#mtAreaGrad);opacity:.22}
+.mt-dot{fill:#fff;stroke:var(--accent2);stroke-width:2;filter:drop-shadow(0 0 4px var(--accent2))}
+.mt-peak{fill:var(--accent2);stroke:#fff;stroke-width:1.5;filter:drop-shadow(0 0 6px var(--accent2))}
+.mt-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--text3);margin-bottom:8px}
+.mt-legend b{color:var(--text2);font-variant-numeric:tabular-nums;font-weight:700}
+.mt-axis{display:flex;justify-content:space-between;font-size:9px;color:var(--text4);font-variant-numeric:tabular-nums}
+.mt-total{font-size:10px;color:var(--text4);margin-top:6px;text-align:right;font-variant-numeric:tabular-nums}
 
 @media(max-width:480px){
   .hs-dot{max-width:150px;padding:4px 8px;font-size:11px}
@@ -2022,19 +2039,18 @@ function renderTopModels(){
   }).catch(function(){el.innerHTML='';});
 }
 
-/* ═══ OVERVIEW: Mini Traffic (24h from history) ═══ */
+/* ═══ OVERVIEW: Mini Traffic — Tech SVG line chart (12h) ═══ */
 function renderMiniTraffic(){
   const el=$('miniTraffic');
   if(!el)return;
   const hist=(state.history||[]);
   if(!hist.length){el.innerHTML='';return;}
-  // bucket per hour: last 12 buckets, key = hour label
+  // bucket per hour: last 12 buckets
   const now=new Date();
   const buckets=[];
   for(let i=11;i>=0;i--){
     const d=new Date(now.getTime()-i*3600000);
-    const key=d.getHours()+':00';
-    buckets.push({key:key,label:(i%3===0?key:''),count:0});
+    buckets.push({key:d.getHours()+':00',count:0});
   }
   const idx={};buckets.forEach(function(b,i){idx[b.key]=i;});
   hist.forEach(function(h){
@@ -2044,15 +2060,39 @@ function renderMiniTraffic(){
     const i=idx[key];
     if(i!==undefined)buckets[i].count+=(h.requests_per_min||1);
   });
-  const max=Math.max.apply(null,buckets.map(function(b){return b.count}))||1;
+  const vals=buckets.map(function(b){return b.count});
+  const max=Math.max.apply(null,vals)||1;
   const total=buckets.reduce(function(s,b){return s+b.count},0);
-  el.innerHTML='<div class="ov-card"><div class="ov-card-h" onclick="navTo(\'hourlytraffic\')"><span class="ov-card-title">📊 Traffic — Last 12h</span><span class="ov-card-more">Charts <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></div><div class="ov-card-b">'
-    +'<div class="mt-bars">'+buckets.map(function(b){
-        var hgt=Math.max(3,Math.round(b.count/max*80));
-        return '<div class="mt-bar" style="height:'+hgt+'px" title="'+b.key+' — '+fmtNum(b.count)+' reqs"><span class="mt-bar-label">'+fmtNum(b.count)+'</span></div>';
-      }).join('')+'</div>'
-    +'<div class="mt-axis">'+buckets.filter(function(b,i){return i%3===0}).map(function(b){return '<span>'+b.key+'</span>'}).join('')+'</div>'
-    +'<div class="mt-total">'+fmtNum(total)+' requests (est.) · 12h window</div>'
+  const avg=Math.round(total/12);
+  // SVG geometry
+  const W=460,H=80,pad=6;
+  const stepX=(W-pad*2)/11;
+  const pts=vals.map(function(v,i){
+    const x=pad+i*stepX;
+    const y=H-pad-(v/max)*(H-pad*2-8);
+    return [x,y];
+  });
+  const line=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)}).join(' ');
+  const area=line+' L'+(W-pad).toFixed(1)+' '+(H-4).toFixed(1)+' L'+pad+' '+(H-4).toFixed(1)+' Z';
+  const peakIdx=vals.indexOf(max);
+  const peak=pts[peakIdx];
+  // x labels (every 3rd hour)
+  const xLabels=buckets.map(function(b,i){return i%3===0?'<span>'+b.key+'</span>':''}).join('');
+  const peakPct=Math.round(max/total*100);
+  el.innerHTML='<div class="ov-card mt-card"><div class="ov-card-h" onclick="navTo(\'hourlytraffic\')"><span class="ov-card-title">📈 Traffic — Last 12h</span><span class="ov-card-more">Charts <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></div><div class="ov-card-b">'
+    +'<div class="mt-legend"><span>Total <b>'+fmtNum(total)+'</b></span><span>Avg/hr <b>'+fmtNum(avg)+'</b></span><span>Peak <b style="color:var(--accent2)">'+fmtNum(max)+'</b></span><span style="color:var(--accent2);font-weight:600">'+peakPct+'% of traffic</span></div>'
+    +'<div class="mt-visual"><div class="mt-grid"></div><div class="mt-scan"></div>'
+    +'<svg class="mt-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+    +'<defs><linearGradient id="mtGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#4695fe"/><stop offset="100%" stop-color="#5445cb"/></linearGradient>'
+    +'<linearGradient id="mtAreaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4695fe"/><stop offset="100%" stop-color="#5445cb" stop-opacity="0"/></linearGradient></defs>'
+    +'<path class="mt-area" d="'+area+'"/>'
+    +'<path class="mt-line" d="'+line+'"/>'
+    +pts.map(function(p,i){return '<circle class="mt-dot" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2"/>'}).join('')
+    +'<circle class="mt-peak" cx="'+peak[0].toFixed(1)+'" cy="'+peak[1].toFixed(1)+'" r="4">'
+    +'<animate attributeName="r" values="3;5;3" dur="1.6s" repeatCount="indefinite"/></circle>'
+    +'</svg></div>'
+    +'<div class="mt-axis">'+xLabels+'</div>'
+    +'<div class="mt-total">auto-refresh · 12h window</div>'
     +'</div></div>';
 }
 function renderDashboard(){
