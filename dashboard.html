@@ -3913,24 +3913,35 @@ function renderLiveRequests() {
   api('/api/status').then(r => {
     const history = (r.history || []).slice(-30).reverse();
     if (!history.length) { el.innerHTML = '<div class="empty-state">No recent requests</div>'; return; }
-    el.innerHTML = history.map(h => {
-      const model = h.model || '—';
-      const ms = h.ms || 0;
-      const cls = ms > 5000 ? 'err' : ms > 2000 ? 'slow' : 'ok';
-      const pTok = h.prompt_tokens || 0;
-      const cTok = h.completion_tokens || 0;
-      const timeStr = h.ts ? timeAgo(h.ts) : '';
-      return `<div class="activity-item" style="padding:10px 0;border-bottom:1px solid var(--border-sub)">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span class="act-status ${cls}"></span>
-          <span class="act-provider">${esc(h.provider||'?')}</span>
-          <span class="act-model">${esc(model)}</span>
-          <span class="act-ms">${ms}ms</span>
-          <span style="font-size:11px;color:var(--text-muted)">⬇${pTok} ⬆${cTok}</span>
-          <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">${timeStr}</span>
-        </div>
-      </div>`;
-    }).join('');
+    el.innerHTML = `<div class="tbl-wrap"><table class="tbl" style="min-width:640px">
+      <thead><tr>
+        <th style="width:36px"></th>
+        <th>Provider</th>
+        <th>Model</th>
+        <th style="text-align:right">Token In</th>
+        <th style="text-align:right">Token Out</th>
+        <th style="text-align:right">Latency</th>
+        <th style="text-align:right">Time</th>
+      </tr></thead>
+      <tbody>` +
+      history.map(h => {
+        const model = h.model || '—';
+        const ms = h.ms || 0;
+        const cls = ms > 5000 ? 'err' : ms > 2000 ? 'slow' : 'ok';
+        const pTok = h.prompt_tokens || 0;
+        const cTok = h.completion_tokens || 0;
+        const timeStr = h.ts ? timeAgo(h.ts) : '—';
+        return `<tr>
+          <td><span class="act-status ${cls}" style="display:inline-block"></span></td>
+          <td class="act-provider">${esc(h.provider||'?')}</td>
+          <td class="act-model">${esc(model)}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${pTok.toLocaleString()}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${cTok.toLocaleString()}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
+          <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
+        </tr>`;
+      }).join('') +
+      `</tbody></table></div>`;
   }).catch(e => { el.innerHTML = '<div class="empty-state">Error loading: ' + e.message + '</div>'; });
 }
 
