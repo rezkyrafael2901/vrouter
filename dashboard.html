@@ -42,7 +42,6 @@ html.dark .header { background: rgba(8,9,10,0.88); border-bottom: 1px solid var(
 html.dark .btn:hover { border-color: rgba(255,255,255,0.12); }
 html.dark .stat:hover { border-color: rgba(255,255,255,0.08); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
 html.dark .nav-item:hover { background: rgba(255,255,255,0.06); }
-html.dark .bottom-nav { background: rgba(8,9,10,0.88); border-top: 1px solid var(--border-sub); }
 html.dark .activity-item:hover { border-color: rgba(124,58,237,0.3); }
 html.dark .provider-card { background: linear-gradient(180deg, var(--card) 0%, rgba(25,26,27,0.7) 100%); }
 html.dark .combo-card { background: linear-gradient(180deg, var(--card) 0%, rgba(25,26,27,0.7) 100%); }
@@ -192,7 +191,7 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .icon-btn > svg { width: 16px; height: 16px; }
 /* ═══ MAIN ═══ */
 .main { margin-left: 0; min-height: 100vh; }
-.content { padding: 20px 16px; padding-bottom: 96px; max-width: 100%; overflow-x: hidden; }
+.content { padding: 20px 16px; padding-bottom: 40px; max-width: 100%; overflow-x: hidden; }
 
 /* ═══ STATS GRID ═══ */
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -418,25 +417,6 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .toast.err { border-left: 2px solid var(--red); }
 .toast.warn { border-left: 2px solid var(--amber); }
 
-/* ═══ BOTTOM NAV ═══ */
-.bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  height: calc(62px + var(--safe-bottom));
-  background: rgba(255,255,255,0.88); backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
-  border-top: 1px solid var(--border-sub); z-index: 100;
-  display: flex; align-items: flex-start; padding-top: 8px;
-  padding-bottom: var(--safe-bottom);
-}
-.nav-tab {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 3px; padding: 6px 4px; color: var(--text4);
-  cursor: pointer; font-size: 10px; font-weight: 510; transition: color 0.15s;
-}
-.nav-tab svg { width: 21px; height: 21px; }
-.nav-tab.active { color: var(--accent-h); }
-.nav-tab:active { opacity: 0.6; }
-
 /* ═══ SKELETON LOADING ═══ */
 @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
 .skel {
@@ -596,8 +576,6 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 @media (min-width: 769px) {
   .sidebar { transform: translateX(0); }
   .main { margin-left: 260px; }
-  .bottom-nav { display: none; }
-  body { padding-bottom: 0; }
   .menu-btn { display: none; }
   .content { padding-bottom: 40px; max-width: 1180px; margin: 0 auto; }
   .stats { grid-template-columns: repeat(4, 1fr); }
@@ -1549,37 +1527,6 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 
     </div>
   </main>
-
-  <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
-    <div class="nav-tab active" id="bnav-endpoint" onclick="navTo('endpoint')">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-      <span>Home</span>
-    </div>
-    <div class="nav-tab" id="bnav-providers" onclick="navTo('providers')">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
-      <span>Providers</span>
-    </div>
-    <div class="nav-tab" id="bnav-combos" onclick="navTo('combos')">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
-      <span>Combos</span>
-    </div>
-
-    <div class="nav-tab" id="bnav-usagelogs" onclick="navTo('usagelogs')">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 0V9m6 3v-3M9 12l3 3 3-3"/></svg>
-      <span>Usage</span>
-    </div>
-    <div class="nav-tab" id="bnav-admin" onclick="navTo('admin')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg><span>Admin</span>
-    </div>
-    <div class="nav-tab" id="bnav-charts" onclick="navTo('charts')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Charts</span>
-    </div>
-    <div class="nav-tab" id="bnav-settings" onclick="navTo('settings')">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-      <span>Settings</span>
-    </div>
-  </nav>
 </div>
 
 <!-- MODALS -->
@@ -2489,9 +2436,6 @@ function navTo(page,noHist){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const nav=$('nav-'+page);
   if(nav)nav.classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
-  const bnav=$('bnav-'+page);
-  if(bnav)bnav.classList.add('active');
   document.querySelectorAll('.panel').forEach(el=>el.classList.add('hidden'));
   const panel=$('panel-'+page);
   if(panel)panel.classList.remove('hidden');
@@ -3041,7 +2985,7 @@ window.addEventListener('popstate',()=>{
 document.addEventListener('touchstart',function(e){
   if(window.scrollY!==0)return;
   if(e.touches.length!==1)return;
-  const target=e.target.closest('.bottom-nav,.modal-bg,.sidebar-overlay,.sidebar');
+  const target=e.target.closest('.modal-bg,.sidebar-overlay,.sidebar');
   if(target)return;
   ptrStartY=e.touches[0].clientY;
   ptrDragging=true;
