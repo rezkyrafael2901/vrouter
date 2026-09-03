@@ -527,6 +527,7 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .hs-count{font-size:11px;color:var(--text4);margin-left:auto}
 /* ═══ OVERVIEW GRID: TOP MODELS + MINI TRAFFIC ═══ */
 .ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.ov-grid>div{min-width:0}
 @media(max-width:900px){.ov-grid{grid-template-columns:1fr}}
 .ov-card{background:var(--card);border:1px solid var(--border-sub);border-radius:16px;overflow:hidden;transition:all .25s cubic-bezier(.4,0,.2,1)}
 .ov-card:hover{border-color:rgba(84,69,203,.2);box-shadow:0 4px 20px rgba(84,69,203,.08)}
