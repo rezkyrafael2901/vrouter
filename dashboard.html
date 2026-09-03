@@ -537,6 +537,7 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .ov-card-h{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--border-sub);cursor:pointer}
 .ov-card-h:hover{background:var(--card2)}
 .ov-card-h .ov-card-title{font-size:13px;font-weight:600;flex:1}
+.ov-card-ico{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(84,69,203,.3)}
 .ov-card-h .ov-card-more{font-size:11px;color:var(--text4);display:flex;align-items:center;gap:2px}
 .ov-card-b{padding:10px 16px 14px}
 /* Top models rows */
@@ -2025,7 +2026,7 @@ function renderTopModels(){
     const totalReq=stats.reduce(function(s,x){return s+(x.total||0)},0);
     if(!stats.length){el.innerHTML='';return;}
     const max=Math.max.apply(null,stats.map(function(x){return x.total||0}))||1;
-    el.innerHTML='<div class="ov-card"><div class="ov-card-h" onclick="navTo(\'modelstats\')"><span class="ov-card-title">🔥 Top Models</span><span class="ov-card-more">Model Stats <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></div><div class="ov-card-b">'
+    el.innerHTML='<div class="ov-card"><div class="ov-card-h" onclick="navTo(\'modelstats\')"><span class="ov-card-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="10" y="10" width="4" height="4"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg></span><span class="ov-card-title">Top Models</span><span class="ov-card-more">Model Stats <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></div><div class="ov-card-b">'
       + stats.map(function(s,i){
           var rate=((s.ok||0)/Math.max(1,(s.total||0))*100);
           var color=rate>=95?'#34D399':rate>=80?'#FBBF24':'#F87171';
@@ -2079,7 +2080,7 @@ function renderMiniTraffic(){
   // x labels (every 3rd hour)
   const xLabels=buckets.map(function(b,i){return i%3===0?'<span>'+b.key+'</span>':''}).join('');
   const peakPct=Math.round(max/total*100);
-  el.innerHTML='<div class="ov-card mt-card"><div class="ov-card-h" onclick="navTo(\'hourlytraffic\')"><span class="ov-card-title">📈 Traffic — Last 12h</span><span class="ov-card-more">Charts <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></div><div class="ov-card-b">'
+  el.innerHTML='<div class="ov-card mt-card"><div class="ov-card-h" onclick="navTo(\'hourlytraffic\')"><span class="ov-card-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span><span class="ov-card-title">Traffic — Last 12h</span><span class="ov-card-more">Charts <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></div><div class="ov-card-b">'
     +'<div class="mt-legend"><span>Total <b>'+fmtNum(total)+'</b></span><span>Avg/hr <b>'+fmtNum(avg)+'</b></span><span>Peak <b style="color:var(--accent2)">'+fmtNum(max)+'</b></span><span style="color:var(--accent2);font-weight:600">'+peakPct+'% of traffic</span></div>'
     +'<div class="mt-visual"><div class="mt-grid"></div><div class="mt-scan"></div>'
     +'<svg class="mt-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
