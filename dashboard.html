@@ -3918,11 +3918,11 @@ function renderLiveRequests() {
         <th style="width:36px"></th>
         <th>Provider</th>
         <th>Model</th>
-        <th style="text-align:right">Token In</th>
-        <th style="text-align:right">Token Out</th>
-        <th style="text-align:right">Latency</th>
-        <th>Status</th>
-        <th style="text-align:right">Time</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Token In</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Token Out</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Latency</th>
+        <th style="width:1%;white-space:nowrap">Status</th>
+        <th style="text-align:right;width:1%;white-space:nowrap">Time</th>
       </tr></thead>
       <tbody>` +
       history.map(h => {
@@ -3944,7 +3944,7 @@ function renderLiveRequests() {
           <td style="text-align:right;font-variant-numeric:tabular-nums;color:#f5c518">↓ ${pTok.toLocaleString()}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums;color:#22c55e">↑ ${cTok.toLocaleString()}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
-          <td>${statusHtml}</td>
+          <td style="padding-left:18px">${statusHtml}</td>
           <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
         </tr>`;
       }).join('') +
