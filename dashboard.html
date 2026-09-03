@@ -2220,7 +2220,6 @@ function renderActivityFeed(){
         <th>Provider</th>
         <th>Model</th>
         <th style="text-align:right;width:1%;white-space:nowrap">Token In/Out</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Latency</th>
         <th style="text-align:right;width:1%;white-space:nowrap">Time</th>
       </tr></thead>
       <tbody>` +
@@ -2235,7 +2234,6 @@ function renderActivityFeed(){
           <td class="act-provider">${esc(it.provider||'?')}</td>
           <td class="act-model">${esc(it.model||'—')}</td>
           <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums"><span style="color:#f5c518">↓ ${pTok.toLocaleString()}</span> <span style="color:#22c55e">↑ ${cTok.toLocaleString()}</span></td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
           <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
         </tr>`;
       }).join('') +
@@ -3928,7 +3926,6 @@ function renderLiveRequests() {
         <th>Provider</th>
         <th>Model</th>
         <th style="text-align:right;width:1%;white-space:nowrap">Token In/Out</th>
-        <th style="text-align:right;width:1%;white-space:nowrap">Latency</th>
         <th style="text-align:right;width:1%;white-space:nowrap">Time</th>
       </tr></thead>
       <tbody>` +
@@ -3944,7 +3941,6 @@ function renderLiveRequests() {
           <td class="act-provider">${esc(h.provider||'?')}</td>
           <td class="act-model">${esc(model)}</td>
           <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums"><span style="color:#f5c518">↓ ${pTok.toLocaleString()}</span> <span style="color:#22c55e">↑ ${cTok.toLocaleString()}</span></td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums">${ms}ms</td>
           <td style="text-align:right;white-space:nowrap;color:var(--text-muted);font-size:12px">${timeStr}</td>
         </tr>`;
       }).join('') +
