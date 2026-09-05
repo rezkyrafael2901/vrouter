@@ -1793,7 +1793,9 @@ async function loadAll(showSkel){
     renderProxies();
     renderModelStats();
     renderHealth();
-    restoreTab();
+    // Only restore tab if curTab got overwritten (e.g. skeleton render shifted state)
+    let lastTab=null; try{lastTab=localStorage.getItem('vrouter-tab')}catch(e){}
+    if(lastTab&&curTab!==lastTab)restoreTab();
   }catch(e){if(e.message!=='auth')toast('Gagal memuat','err')}
 }
 
@@ -2451,6 +2453,7 @@ function exportUsageLogs(){
 }
 function navTo(page,noHist){
   curTab=page;
+  try{localStorage.setItem('vrouter-tab',page)}catch(e){}
   if(history.pushState&&!noHist){
     const hash=page==='endpoint'?'':'#'+page;
     window.history.pushState({page},'',hash);
@@ -2500,9 +2503,10 @@ function navTo(page,noHist){
 
 function restoreTab(){
   const hashPage=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','hourlytraffic','alerts','budget','charts','admin','settings'];
-  if(hashPage&&valid.includes(hashPage))navTo(hashPage,true);
-  else navTo('endpoint',true);
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','usagelogs','hourlytraffic','alerts','budget','charts','admin','settings'];
+  let saved=null; try{saved=localStorage.getItem('vrouter-tab')}catch(e){}
+  const target=(hashPage&&valid.includes(hashPage))?hashPage:(saved&&valid.includes(saved)?saved:'endpoint');
+  navTo(target,true);
 }
 
 function toggleSidebar(){$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show')}
@@ -3030,8 +3034,10 @@ document.addEventListener('touchcancel',function(){
 
 (function init(){
   const hashPage=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','hourlytraffic','alerts','budget','charts','admin','settings'];
-  if(hashPage&&valid.includes(hashPage)){curTab=hashPage;navTo(hashPage,true);}
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','usagelogs','hourlytraffic','alerts','budget','charts','admin','settings'];
+  let saved=null; try{saved=localStorage.getItem('vrouter-tab')}catch(e){}
+  const target=(hashPage&&valid.includes(hashPage))?hashPage:(saved&&valid.includes(saved)?saved:'endpoint');
+  curTab=target;navTo(target,true);
   showAllSkeletons();
   api('/api/status').then(function(){hideLogin();loadAll();startAutoRefresh(30000)}).catch(function(){showLogin()});
 })();
@@ -3039,9 +3045,9 @@ document.addEventListener('touchcancel',function(){
 // Keep page on refresh: hash already in URL → restore instantly; back/forward → follow hash
 window.addEventListener('hashchange',function(){
   const h=window.location.hash.slice(1);
-  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','history','usagelogs','hourlytraffic','alerts','budget','charts','admin','settings'];
+  const valid=['endpoint','providers','combos','proxies','modelstats','healthscore','costs','tokspeed','circuits','health','usagelogs','hourlytraffic','alerts','budget','charts','admin','settings'];
   if(h&&valid.includes(h))navTo(h,true);
-  else navTo('endpoint',true);
+  else{let s=null;try{s=localStorage.getItem('vrouter-tab')}catch(e){};navTo((s&&valid.includes(s))?s:'endpoint',true);}
 });
 
 // ═══════════════════════════════════════
