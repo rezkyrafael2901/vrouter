@@ -561,6 +561,28 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 .tech-glow{animation:pulse-glow 3s ease-in-out infinite}
 .chart-card{background:var(--card);border:1px solid var(--border-sub);border-radius:16px;padding:18px;position:relative;overflow:hidden;transition:all .25s cubic-bezier(.4,0,.2,1)}
 .chart-card:hover{box-shadow:0 4px 20px rgba(84,69,203,.06);transform:translateY(-1px)}
+
+/* ═══ TECH CHARTS ═══ */
+@keyframes pulse-glow{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes blink-dot{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes ch-card-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ch-hero{position:relative;border-radius:16px;overflow:hidden;margin-bottom:16px;padding:24px 28px;background:linear-gradient(135deg,rgba(124,58,215,0.10) 0%,rgba(84,69,203,0.06) 40%,rgba(21,198,200,0.04) 100%);border:1px solid var(--border-sub)}
+.ch-hero-orb{position:absolute;border-radius:50%;pointer-events:none}
+.ch-live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);display:inline-block;animation:blink-dot 2s ease-in-out infinite}
+.ch-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media(max-width:700px){.ch-grid{grid-template-columns:1fr}}
+.ch-card{background:var(--card);border:1px solid var(--border-sub);border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:all .3s cubic-bezier(.4,0,.2,1);animation:ch-card-in .4s ease both}
+.ch-card:nth-child(2){animation-delay:.05s}.ch-card:nth-child(3){animation-delay:.1s}.ch-card:nth-child(4){animation-delay:.15s}
+.ch-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(124,58,215,0.2),transparent);opacity:0;transition:opacity .3s}
+.ch-card:hover{border-color:rgba(124,58,215,0.2);box-shadow:0 4px 24px rgba(124,58,215,0.06),0 0 0 1px rgba(124,58,215,0.05);transform:translateY(-2px)}
+.ch-card:hover::before{opacity:1}
+.ch-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border-sub)}
+.ch-card-title{font-size:13px;font-weight:600;color:var(--text2);letter-spacing:-0.2px}
+.ch-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:500;padding:3px 8px;border-radius:20px;border:1px solid}
+.ch-badge-dot{width:5px;height:5px;border-radius:50%;display:inline-block}
+.ch-chart-center{display:flex;align-items:center;justify-content:center;height:200px}
+.ch-hero-card{border-color:rgba(124,58,215,0.12);box-shadow:0 2px 16px rgba(124,58,215,0.04)}
+.ch-hero-card:hover{box-shadow:0 4px 28px rgba(124,58,215,0.08)}
 .stat{transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
 .kpi-card:hover{border-color:rgba(84,69,203,.2);box-shadow:0 4px 20px rgba(84,69,203,.08);transform:translateY(-2px)}
 
@@ -1442,13 +1464,68 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 
 <!-- ═══ CHARTS DASHBOARD ═══ -->
 <div id="panel-charts" class="panel hidden">
-  <div class="section-header"><div><div class="section-title">Charts</div><div class="section-sub">Visual analytics</div></div></div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
-    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Requests/Min</div><canvas id="rpmChart" style="height:180px;width:100%"></canvas></div></div>
-    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Model Breakdown</div><canvas id="modelChart" style="height:180px;width:100%"></canvas></div></div>
-    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Provider Latency</div><canvas id="providerChart" style="height:180px;width:100%"></canvas></div></div>
-    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Error Breakdown</div><canvas id="errorChart" style="height:180px;width:100%"></canvas></div></div>
-    <div class="card"><div class="card-body"><div class="section-title" style="font-size:14px;margin-bottom:10px">Cost Trend</div><canvas id="costChart" style="height:180px;width:100%"></canvas></div></div>
+  <div class="ch-hero">
+    <div class="ch-hero-orb" style="top:-40px;right:-40px;width:120px;height:120px;background:radial-gradient(circle,rgba(124,58,215,0.18),transparent 70%);animation:pulse-glow 3s ease-in-out infinite"></div>
+    <div class="ch-hero-orb" style="bottom:-30px;left:30%;width:80px;height:80px;background:radial-gradient(circle,rgba(21,198,200,0.12),transparent 70%);animation:pulse-glow 4s ease-in-out infinite 1s"></div>
+    <div style="position:relative;display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-h)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <div style="font-size:18px;font-weight:700;color:var(--text);letter-spacing:-0.3px">Analytics Dashboard</div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green)"><span class="ch-live-dot"></span>Live</div>
+    </div>
+    <div style="font-size:12px;color:var(--text3)">Real-time performance metrics &amp; traffic analysis</div>
+  </div>
+
+  <div class="ch-card ch-hero-card">
+    <div class="ch-card-head">
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-h)" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <span class="ch-card-title">Requests / Minute</span>
+      </div>
+      <div class="ch-badge" style="color:var(--accent-h);border-color:rgba(124,58,215,0.3);background:rgba(124,58,215,0.08)"><span class="ch-badge-dot" style="background:var(--accent-h)"></span> Throughput</div>
+    </div>
+    <canvas id="rpmChart" style="height:220px;width:100%"></canvas>
+  </div>
+
+  <div class="ch-grid">
+    <div class="ch-card">
+      <div class="ch-card-head">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/></svg>
+          <span class="ch-card-title">Model Traffic</span>
+        </div>
+      </div>
+      <div class="ch-chart-center"><canvas id="modelChart"></canvas></div>
+    </div>
+
+    <div class="ch-card">
+      <div class="ch-card-head">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="ch-card-title">Provider Latency</span>
+        </div>
+      </div>
+      <canvas id="providerChart" style="height:200px;width:100%"></canvas>
+    </div>
+
+    <div class="ch-card">
+      <div class="ch-card-head">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="ch-card-title">Error Types</span>
+        </div>
+      </div>
+      <div class="ch-chart-center"><canvas id="errorChart"></canvas></div>
+    </div>
+
+    <div class="ch-card">
+      <div class="ch-card-head">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span class="ch-card-title">Cost Trend</span>
+        </div>
+      </div>
+      <canvas id="costChart" style="height:200px;width:100%"></canvas>
+    </div>
   </div>
 </div>
 
@@ -3701,17 +3778,33 @@ document.addEventListener('keydown', admKeyHandler);
 let rpmChart, modelChart, providerChart, errorChart, costChart, hourlyChart;
 
 function initCharts() {
-  // RPM chart
+  const isDark = document.documentElement.classList.contains('dark');
+  const gridColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)';
+  const tickColor = isDark ? '#62666d' : '#9aa0a6';
+  const accentPurple = '#7c3aed';
+  const accentViolet = '#8b5cf6';
+  const accentTeal = '#22d3ee';
+  const accentGreen = '#34d399';
+  const accentAmber = '#fbbf24';
+  const accentRed = '#f87171';
+
+  // RPM chart — glowing gradient line
   const rpmCtx = document.getElementById('rpmChart')?.getContext('2d');
   if (rpmCtx && !rpmChart) {
+    const rpmGrad = rpmCtx.createLinearGradient(0, 0, 0, 220);
+    rpmGrad.addColorStop(0, 'rgba(124,58,215,0.25)');
+    rpmGrad.addColorStop(1, 'rgba(124,58,215,0.01)');
     rpmChart = new Chart(rpmCtx, {
       type: 'line',
-      data: {
-        labels: [],
-        datasets: [{ label: 'Requests/Min', data: [], borderColor: '#5445cb', backgroundColor: 'rgba(84,69,203,0.1)', fill: true, tension: 0.4, pointRadius: 3 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-        scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } } }
+      data: { labels: [], datasets: [{
+        label: 'RPM', data: [], borderColor: accentPurple, backgroundColor: rpmGrad,
+        fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2.5
+      }]},
+      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(25,26,27,0.92)', titleColor: '#f7f8f8', bodyColor: '#d0d6e0', borderColor: 'rgba(124,58,215,0.3)', borderWidth: 1, cornerRadius: 8, padding: 10,
+          displayColors: false, callbacks: { label: function(c){ return c.parsed.y + ' req/min' } }
+        }},
+        scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: gridColor, drawBorder: false }, ticks: { color: tickColor, font: { size: 10, family: 'Inter Mono' }, maxTicksLimit: 5 } } }
       }
     });
   }
@@ -3720,38 +3813,57 @@ function initCharts() {
   if (modelCtx && !modelChart) {
     modelChart = new Chart(modelCtx, {
       type: 'doughnut',
-      data: { labels: [], datasets: [{ data: [], backgroundColor: ['#5445cb','#4695fe','#15c6c8','#10b981','#f59e0b','#ef4444'], borderWidth: 0 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } } } }
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [accentPurple, accentViolet, accentTeal, accentGreen, accentAmber, accentRed, '#6366f1', '#ec4899'], borderWidth: 0, hoverOffset: 6 }]},
+      options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, boxHeight: 8, padding: 8, font: { size: 10, family: 'Inter' }, color: tickColor, usePointStyle: true, pointStyle: 'circle' } } }
+      }
     });
   }
-  // Provider latency bar
+  // Provider latency horizontal bar
   const provCtx = document.getElementById('providerChart')?.getContext('2d');
   if (provCtx && !providerChart) {
     providerChart = new Chart(provCtx, {
       type: 'bar',
-      data: { labels: [], datasets: [{ label: 'Avg Latency (ms)', data: [], backgroundColor: '#5445cb', borderRadius: 4 }] },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } }
+      data: { labels: [], datasets: [{ label: 'Latency (ms)', data: [], backgroundColor: function(ctx){
+        const chart=ctx.chart;const{ctx:c,chartArea}=chart;if(!chartArea)return accentPurple;
+        const g=c.createLinearGradient(chartArea.left,0,chartArea.right,0);
+        g.addColorStop(0,'rgba(124,58,215,0.7)');g.addColorStop(1,'rgba(139,92,246,0.4)');return g;
+      }, borderRadius: 4, barThickness: 16 }]},
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(25,26,27,0.92)', titleColor: '#f7f8f8', bodyColor: '#d0d6e0', borderColor: 'rgba(124,58,215,0.3)', borderWidth: 1, cornerRadius: 8, padding: 10,
+          displayColors: false, callbacks: { label: function(c){ return c.parsed.x + 'ms' } }
+        }},
+        scales: { x: { beginAtZero: true, grid: { color: gridColor, drawBorder: false }, ticks: { color: tickColor, font: { size: 10, family: 'Inter Mono' } } },
+          y: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11, family: 'Inter' } } } }
       }
     });
   }
-  // Error breakdown pie
+  // Error breakdown doughnut (changed from pie for consistency)
   const errCtx = document.getElementById('errorChart')?.getContext('2d');
   if (errCtx && !errorChart) {
     errorChart = new Chart(errCtx, {
-      type: 'pie',
-      data: { labels: [], datasets: [{ data: [], backgroundColor: ['#ef4444','#f59e0b','#6b7280','#4695fe'], borderWidth: 0 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8, font: { size: 11 } } } } }
+      type: 'doughnut',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [accentRed, accentAmber, '#6b7280', accentViolet, accentTeal], borderWidth: 0, hoverOffset: 6 }]},
+      options: { responsive: true, maintainAspectRatio: false, cutout: '55%',
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, boxHeight: 8, padding: 8, font: { size: 10, family: 'Inter' }, color: tickColor, usePointStyle: true, pointStyle: 'circle' } } }
+      }
     });
   }
   // Cost trend line
   const costCtx = document.getElementById('costChart')?.getContext('2d');
   if (costCtx && !costChart) {
+    const costGrad = costCtx.createLinearGradient(0, 0, 0, 200);
+    costGrad.addColorStop(0, 'rgba(52,211,153,0.2)');
+    costGrad.addColorStop(1, 'rgba(52,211,153,0.01)');
     costChart = new Chart(costCtx, {
       type: 'line',
-      data: { labels: [], datasets: [{ label: 'Cost ($)', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4, pointRadius: 3 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-        scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } } }
+      data: { labels: [], datasets: [{ label: 'Cost ($)', data: [], borderColor: accentGreen, backgroundColor: costGrad,
+        fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2.5 }]},
+      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(25,26,27,0.92)', titleColor: '#f7f8f8', bodyColor: '#d0d6e0', borderColor: 'rgba(52,211,153,0.3)', borderWidth: 1, cornerRadius: 8, padding: 10,
+          displayColors: false, callbacks: { label: function(c){ return '$' + c.parsed.y.toFixed(4) } }
+        }},
+        scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: gridColor, drawBorder: false }, ticks: { color: tickColor, font: { size: 10, family: 'Inter Mono' }, maxTicksLimit: 5, callback: function(v){return '$'+v} } } }
       }
     });
   }
@@ -3760,9 +3872,15 @@ function initCharts() {
   if (hCtx && !hourlyChart) {
     hourlyChart = new Chart(hCtx, {
       type: 'bar',
-      data: { labels: [], datasets: [{ label: 'Requests', data: [], backgroundColor: '#4695fe', borderRadius: 4 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } } }
+      data: { labels: [], datasets: [{ label: 'Requests', data: [], backgroundColor: function(ctx){
+        const chart=ctx.chart;const{ctx:c,chartArea}=chart;if(!chartArea)return accentViolet;
+        const g=c.createLinearGradient(0,chartArea.bottom,0,chartArea.top);
+        g.addColorStop(0,'rgba(139,92,246,0.3)');g.addColorStop(1,'rgba(139,92,246,0.8)');return g;
+      }, borderRadius: 4 }]},
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(25,26,27,0.92)', titleColor: '#f7f8f8', bodyColor: '#d0d6e0', borderColor: 'rgba(139,92,246,0.3)', borderWidth: 1, cornerRadius: 8, padding: 10 } },
+        scales: { x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 10 }, maxRotation: 0 } },
+          y: { beginAtZero: true, grid: { color: gridColor, drawBorder: false }, ticks: { color: tickColor, font: { size: 10, family: 'Inter Mono' }, maxTicksLimit: 5 } } }
       }
     });
   }
