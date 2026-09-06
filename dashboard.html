@@ -2455,8 +2455,12 @@ function navTo(page,noHist){
   curTab=page;
   try{localStorage.setItem('vrouter-tab',page)}catch(e){}
   if(history.pushState&&!noHist){
-    const hash=page==='endpoint'?'':'#'+page;
-    window.history.pushState({page},'',hash);
+    if(page==='endpoint'){
+      // Explicitly clear hash — pushState('') doesn't reliably strip # on MIUI
+      history.replaceState({page},'',window.location.pathname);
+    }else{
+      window.history.pushState({page},'', '#'+page);
+    }
   }
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const nav=$('nav-'+page);
