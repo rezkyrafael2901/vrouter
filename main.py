@@ -341,6 +341,8 @@ class Provider:
             self._key_idx = (self._key_idx + 1) % k
             key = self.keys[idx]
             kk = f"{self.name}|{key}"
+            if KEY_402_COOLDOWN.get(kk, 0) > now:
+                continue  # key credit-nya habis (402) — lewati sampai cooldown habis / topup
             if KEY_COOLDOWN.get(kk, 0) > now:
                 continue  # key masih cooldown 429 — lewati
             if now - KEY_LAST_SENT.get(kk, 0.0) < KEY_MIN_INTERVAL:
@@ -360,6 +362,12 @@ class Provider:
             KEY_LAST_SENT[kk] = now
             return key
         # semua key cool — best-effort (key dengan cooldown paling dekat)
+        # TAPI: jangan pilih key yang masih 402-cooldown kalau ada key lain yang bebas 402
+        alive = [key for key in self.keys if KEY_402_COOLDOWN.get(f"{self.name}|{key}", 0) <= now]
+        if alive:
+            idx = self._key_idx % len(alive)
+            self._key_idx = (self._key_idx + 1) % len(alive)
+            return alive[idx]
         idx = self._key_idx % k
         self._key_idx = (self._key_idx + 1) % k
         return self.keys[idx]
@@ -411,7 +419,9 @@ DEAD_MODELS: dict[str, dict] = {}    # model_id -> {failures, last_checked, last
 KEY_COOLDOWN: dict = {}               # "provider|key" -> unlock ts (exponential backoff after 429)
 KEY_429_BURST: dict = {}             # "provider|key" -> consecutive 429 count
 KEY_LAST_SENT: dict = {}            # "provider|key" -> ts (min-interval gate)
+KEY_402_COOLDOWN: dict = {}          # "provider|key" -> unlock ts (long cooldown after 402 credit-exhausted)
 KEY_MIN_INTERVAL = ROUTER_CFG.get("key_min_interval", 0.5)   # min gap per key (anti-burst)
+KEY_402_COOLDOWN_SECONDS = ROUTER_CFG.get("key_402_cooldown_seconds", 1800)  # skip key 30 menit setelah 402 credit-exhausted
 HEDGE_RACE_TIMEOUT = ROUTER_CFG.get("hedge_race_timeout", 3.0)
 SPECULATIVE_HEDGE = ROUTER_CFG.get("speculative_hedge", True)
 # Phase E — per-key weighted routing: pick the fastest-healthy key per provider, not round-robin.
@@ -1283,12 +1293,22 @@ def mark_key_429(provider_name: str, key: str) -> None:
     KEY_COOLDOWN[kk] = time.time() + cool
 
 
+def mark_key_402(provider_name: str, key: str) -> None:
+    """Per-key LONG cooldown setelah 402 (credit/billing exhausted di upstream).
+    Key dianggap mati sampai di-topup — skip di next_key() tanpa buang attempt.
+    Cooldown panjang (default 30 menit) supaya request berikutnya langsung loncat
+    ke key sehat di provider yang sama."""
+    kk = f"{provider_name}|{key}"
+    KEY_402_COOLDOWN[kk] = time.time() + KEY_402_COOLDOWN_SECONDS
+
+
 def mark_key_ok(provider_name: str, key: str) -> None:
     """Reset cooldown/burst setelah key respon 200."""
     kk = f"{provider_name}|{key}"
     if kk in KEY_429_BURST:
         KEY_429_BURST[kk] = max(0, KEY_429_BURST[kk] - 1)
     KEY_COOLDOWN.pop(kk, None)
+    KEY_402_COOLDOWN.pop(kk, None)
     KEY_LAST_SENT[kk] = time.time()
 
 
@@ -1349,6 +1369,8 @@ async def _stream_worker(provider: Provider, upstream_model: str, body: dict,
             mark_model_error(provider.name, upstream_model, f"HTTP {resp.status_code}")
             if resp.status_code == 429:
                 mark_key_429(provider.name, key)
+            elif resp.status_code == 402:
+                mark_key_402(provider.name, key)  # credit habis — cooldown panjang per-key
             return
         async for raw in resp.aiter_bytes():
             if not signal.is_set():
@@ -2159,10 +2181,13 @@ async def chat_completions(request: Request, authorization: Optional[str] = Head
 
                     # Live dead-model tracking: permanent-ish errors mark model,
                     # so combo routing skips it on the NEXT request (fast feedback).
-                    if resp.status_code in (401, 403, 404, 405, 429, 500, 502, 503, 504):
+                    # 402 = credit/billing exhausted upstream — model tetap valid,
+                    # tapi key-nya yang mati; tetap mark biar combo tahu.
+                    if resp.status_code in (401, 402, 403, 404, 405, 429, 500, 502, 503, 504):
                         mark_model_error(provider.name, upstream_model, f"HTTP {resp.status_code}")
 
                     # Retry logic: 429 → per-key exponential cooldown + rotate key;
+                    # 402 → per-key LONG cooldown (credit habis) + rotate key;
                     # 500 → retry once; 502/503 → skip to next route immediately.
                     if resp.status_code == 429 and retry < max_retries_per_provider:
                         record_key_result(provider.name, key, latency_ms, False)
@@ -2170,6 +2195,17 @@ async def chat_completions(request: Request, authorization: Optional[str] = Head
                         errors.append(f"{provider.name}: HTTP 429 (key rotated, retry {retry+1})")
                         await asyncio.sleep(KEY_MIN_INTERVAL)  # pendek — next_key loncat key yang cooldown
                         continue  # retry same provider w/ key berikutunya
+                    elif resp.status_code == 402:
+                        # Credit/billing habis di upstream: tandai key mati (cooldown panjang)
+                        # lalu coba key berikutnya di provider yang sama (kalau masih ada attempt).
+                        record_key_result(provider.name, key, latency_ms, False)
+                        mark_key_402(provider.name, key)
+                        if retry < max_retries_per_provider:
+                            errors.append(f"{provider.name}: HTTP 402 (key credit-exhausted, rotated to next key)")
+                            await asyncio.sleep(KEY_MIN_INTERVAL)
+                            continue  # retry same provider w/ key berikutnya
+                        errors.append(f"{provider.name}: HTTP 402 (all attempts used, key credit-exhausted)")
+                        break  # move to next provider candidate
                     elif resp.status_code == 500 and retry < max_retries_per_provider:
                         backoff = backoff_base * (2 ** retry)
                         errors.append(f"{provider.name}: HTTP 500 (retry {retry+1} in {backoff}s)")
