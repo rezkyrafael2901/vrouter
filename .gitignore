@@ -37,3 +37,7 @@ node_modules/
 # Logs
 *.log
 pm2-*.log
+
+# Stale local staging copies (never served — nginx serves dashboard.html)
+dashboard.new.html
+dashboard.*.html
