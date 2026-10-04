@@ -1786,7 +1786,7 @@ code, .mono, .p-url, .proxy-url, .combo-route { font-family: 'Inter Mono', 'JetB
 
 // THEME SYSTEM
 function initTheme(){
-  var t=localStorage.getItem('vrouter-theme');
+  var t=null; try{t=localStorage.getItem('vrouter-theme')}catch(e){t=null}
   if(!t)t='';
   document.documentElement.className=t;
   updateThemeIcon();
@@ -1800,7 +1800,7 @@ function updateThemeIcon(){
 function toggleTheme(){
   var isDark=document.documentElement.classList.contains('dark');
   document.documentElement.className=isDark?'':'dark';
-  localStorage.setItem('vrouter-theme',isDark?'':'dark');
+  try{localStorage.setItem('vrouter-theme',isDark?'':'dark')}catch(e){};
   updateThemeIcon();
 }
 initTheme();

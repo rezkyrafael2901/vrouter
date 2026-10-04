@@ -1507,15 +1507,43 @@ async def list_models(authorization: Optional[str] = Header(None)):
     check_gateway_key(authorization)
     data = []
     seen = set()
-    # Combos first — they lead the /model list ahead of individual provider models
-    for name in COMBOS:
-        if name not in seen:
+    # Only expose active providers and combos with at least one active route.
+    # Telegram/Hermes discover /v1/models, so visibility must match routing state.
+    active_providers = {
+        p.name: bool(p.is_active and p.keys)
+        for p in PROVIDERS.values()
+    }
+    # Combos first — only when at least one route points to an active provider.
+    for name, combo in COMBOS.items():
+        combo_active = any(
+            active_providers.get(route.get("provider"), False)
+            for route in combo.get("routes", [])
+        )
+        if combo_active and name not in seen:
             data.append({"id": name, "object": "model", "created": 0, "owned_by": "combo"})
             seen.add(name)
     for p in PROVIDERS.values():
+        if not active_providers.get(p.name, False):
+            continue
         if p.prefix:
-            # Include all effective models (manual + auto) with prefix
-            for m in p.effective_models:
+            # For BAI, expose only the models explicitly present in combo BAI.
+            # Keep the provider's full model cache for routing/admin purposes.
+            allowed_models = None
+            # Restrict exposure to this provider's own combo routes only.
+            # BAI: original behaviour. TOKENHARBOR: only the verified free-tier
+            # models in combo TOKENHARBOR are exposed (avoid dumping all 62).
+            # Internal p.models cache stays intact for routing/admin use.
+            if p.name in ("BAI", "TOKENHARBOR") and p.name in COMBOS:
+                allowed_models = {
+                    route.get("model")
+                    for route in COMBOS[p.name].get("routes", [])
+                    if route.get("provider") == p.name and route.get("model")
+                }
+            visible_models = (
+                [m for m in p.effective_models if m in allowed_models]
+                if allowed_models is not None else p.effective_models
+            )
+            for m in visible_models:
                 mid = f"{p.prefix}/{m}"
                 if mid not in seen:
                     data.append({"id": mid, "object": "model", "created": 0, "owned_by": p.name})
@@ -4406,4 +4434,5 @@ async def admin_bulk_update(request: Request):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=SERVER_CFG.get("port", 20129), log_level="info")
+    _bind_host = os.environ.get("VROUTER_HOST", SERVER_CFG.get("host", "127.0.0.1"))
+    uvicorn.run(app, host=_bind_host, port=SERVER_CFG.get("port", 20129), log_level="info")
