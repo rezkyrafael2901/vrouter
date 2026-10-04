@@ -1663,35 +1663,158 @@ html:not(.dark) .tbl tbody tr:hover{ background:rgba(84,69,203,.035); }
 }
 #panel-endpoint .ov-card-b{ padding:13px 14px 14px; }
 
-/* ── 5. Top Models → rank leaderboard (no hexagon / circuit / shimmer) ─ */
-#panel-endpoint .tm-circuit::before{ display:none; }          /* kill grid backdrop */
+/* ── 5. Top Models → "RACE ROWS"  (v6 DEFAULT design) ───────────────────
+   Each model is a rounded row whose *background is the volume bar*: the old
+   thin 4px track became a full-height fill behind the text, so the list reads
+   as a horizontal bar race. Rank column is a plain mono numeral with a
+   gold/silver/bronze tab on the top three.  Alternate design = body.tm-v6b.
+   ─────────────────────────────────────────────────────────────────────── */
+#panel-endpoint .tm-circuit::before{ display:none; }          /* no grid backdrop */
+#panel-endpoint .tm-circuit .ov-card-b{ padding:12px 12px 10px; }
 #panel-endpoint .tm-row{
   display:grid;
-  grid-template-columns:30px minmax(0,1fr);
-  align-items:center;
-  column-gap:10px;
-  padding:10px 0;
-  border-bottom:1px solid var(--border-sub);
+  grid-template-columns:24px minmax(0,1fr);
+  column-gap:9px;
+  align-items:stretch;
+  padding:0;
+  border:0;
+  margin:0 0 8px;
 }
-#panel-endpoint .tm-row:last-child{ border-bottom:0; padding-bottom:2px; }
-#panel-endpoint .tm-row:first-child{ padding-top:2px; }
-#panel-endpoint .tm-row::before{ display:none; }              /* kill connector line */
-#panel-endpoint .tm-hex{ width:26px; height:26px; margin-right:0; }
+#panel-endpoint .tm-row:last-child{ margin-bottom:0; }
+#panel-endpoint .tm-row::before{ display:none; }              /* no connector line */
+#panel-endpoint .tm-hex{
+  width:24px; height:auto; margin:0;
+  display:flex; align-items:center; justify-content:flex-start;
+}
 #panel-endpoint .tm-hex svg{ display:none; }                  /* kill hexagon badge */
 #panel-endpoint .tm-hex-num{
-  font-family:var(--mono); font-size:15px; font-weight:700;
-  letter-spacing:-1px;
+  position:static; inset:auto;
+  font-family:var(--mono); font-size:14px; font-weight:700;
+  letter-spacing:-.5px; line-height:1;
 }
-#panel-endpoint .tm-top{ gap:10px; }
-#panel-endpoint .tm-name{ font-size:12.5px; font-weight:600; letter-spacing:-.15px; }
-#panel-endpoint .tm-donut{ width:28px; height:28px; }
-#panel-endpoint .tm-sub{
-  margin:4px 0 6px;
-  font-family:var(--mono); font-size:9.5px; letter-spacing:.01em;
+#panel-endpoint .tm-info{
+  position:relative;
+  display:block;
+  padding:9px 11px 10px;
+  border-radius:9px;
+  background:var(--card2);
+  border:1px solid var(--border-sub);
+  border-left:3px solid var(--border-sub);
+  overflow:hidden;
+  min-width:0;
 }
-#panel-endpoint .tm-bar{ height:4px; border-radius:2px; background:var(--bg3); }
-#panel-endpoint .tm-bar-fill{ border-radius:2px; }
+#panel-endpoint .tm-row:nth-child(1) .tm-info{ border-left-color:#fbbf24; }
+#panel-endpoint .tm-row:nth-child(2) .tm-info{ border-left-color:#94a3b8; }
+#panel-endpoint .tm-row:nth-child(3) .tm-info{ border-left-color:#fb923c; }
+/* the volume BAR: full-height fill behind the text, crisp bright right edge */
+#panel-endpoint .tm-bar{
+  position:absolute; inset:0; width:auto; height:auto;
+  background:transparent; border-radius:0; overflow:hidden; z-index:0;
+  pointer-events:none;
+}
+#panel-endpoint .tm-bar-fill{
+  height:100%; border-radius:0; opacity:.34;
+  box-shadow:inset -2px 0 0 rgba(255,255,255,.24);
+}
+/* legibility scrim painted over the wash (::after = last child) */
+#panel-endpoint .tm-info::after{
+  content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.32));
+}
 #panel-endpoint .tm-bar-fill::after{ display:none; }          /* kill shimmer sweep */
+#panel-endpoint .tm-top, #panel-endpoint .tm-sub{ position:relative; z-index:1; }
+#panel-endpoint .tm-top{ gap:10px; }
+#panel-endpoint .tm-name{
+  font-size:12.5px; font-weight:600; letter-spacing:-.15px;
+  text-shadow:0 1px 2px rgba(0,0,0,.55);
+}
+#panel-endpoint .tm-donut{ width:30px; height:30px; flex-shrink:0; }
+#panel-endpoint .tm-sub{
+  margin:4px 0 0;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.01em;
+  color:var(--text3);
+  text-shadow:0 1px 2px rgba(0,0,0,.55);
+}
+
+/* ── 5b. Top Models ALTERNATE → "HERO + RUNNERS-UP" (body.tm-v6b) ───────
+   #1 gets a large hero panel (big volume numeral + 54px rate ring); #2–#5
+   collapse to slim one-line rows with circular rank badges. Activate by
+   adding class `tm-v6b` to <body> (NOT <html> — the theme code rewrites
+   documentElement.className on init/toggle and would wipe it).
+   ─────────────────────────────────────────────────────────────────────── */
+body.tm-v6b #panel-endpoint .tm-circuit::before{ display:none; }
+body.tm-v6b #panel-endpoint .tm-circuit .ov-card-b{ padding:12px; }
+
+/* hero = rank 1 */
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1){
+  display:block; padding:0; margin:0 0 7px; border:0;
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-hex{ display:none; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-info{
+  padding:14px 14px 15px;
+  border-radius:10px;
+  background:linear-gradient(150deg,rgba(124,58,237,.22),rgba(70,149,254,.06));
+  border:1px solid rgba(124,58,237,.34);
+  border-left:3px solid var(--accent);
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-info::after{ display:none; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-top{ align-items:center; gap:12px; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-name{
+  font-size:15px; font-weight:700; letter-spacing:-.3px; text-shadow:none;
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-donut{ width:54px; height:54px; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-sub{
+  margin:9px 0 0; gap:8px; align-items:center; font-size:10px; text-shadow:none;
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-sub span:first-child{
+  font-family:var(--mono); font-size:20px; font-weight:700; color:var(--text);
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-sub span:nth-child(2){ display:none; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-sub span:last-child{
+  background:var(--card2); border:1px solid var(--border-sub);
+  border-radius:6px; padding:2px 8px; color:var(--accent-h);
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-bar{
+  position:static; height:7px; width:auto; margin-top:11px;
+  background:var(--bg3); border-radius:4px; overflow:hidden;
+  -webkit-mask-image:none; mask-image:none;
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-bar-fill{
+  height:100%; border-radius:4px; opacity:1;
+}
+
+/* runners-up = ranks 2..5 */
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2){
+  display:grid; grid-template-columns:22px minmax(0,1fr); column-gap:8px;
+  align-items:center;
+  padding:8px 2px; margin:0;
+  border-bottom:1px solid var(--border-sub);
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2):last-child{ border-bottom:0; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-hex{
+  display:flex; width:22px; height:22px;
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-hex svg{ display:block; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-hex-num{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:10px; letter-spacing:0;
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-info{
+  padding:0; background:none; border:0; border-radius:0; overflow:visible;
+  display:flex; align-items:center; gap:9px;
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-info::after{ display:none; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-top{ flex:1; min-width:0; gap:8px; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-name{
+  font-size:11.5px; line-height:1.25; text-shadow:none;
+  white-space:normal; overflow:visible; text-overflow:clip;
+  word-break:break-word;
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-donut{ width:24px; height:24px; }
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-sub{
+  margin:0; flex-shrink:0; font-size:9px; color:var(--text4); text-shadow:none;
+}
+body.tm-v6b #panel-endpoint .tm-row:nth-child(n+2) .tm-bar{ display:none; }
 
 /* ── 6. Mini Traffic → flat plot + stat chips ────────────────────────── */
 #panel-endpoint .mt-card{ border-radius:var(--r-instr); }
@@ -1763,12 +1886,17 @@ html:not(.dark) .tbl tbody tr:hover{ background:rgba(84,69,203,.035); }
   #panel-endpoint .ov-alert{ padding:8px 11px; border-radius:7px; }
   #panel-endpoint .ov-card-h{ padding:10px 12px; }
   #panel-endpoint .ov-card-b{ padding:11px 12px 12px; }
-  #panel-endpoint .tm-row{ grid-template-columns:26px minmax(0,1fr); column-gap:8px; padding:9px 0; }
-  #panel-endpoint .tm-hex{ width:24px; height:24px; }
+  #panel-endpoint .tm-row{ grid-template-columns:22px minmax(0,1fr); column-gap:8px; }
+  #panel-endpoint .tm-hex{ width:22px; }
   #panel-endpoint .tm-name{ font-size:12px; }
+  #panel-endpoint .tm-circuit .ov-card-b{ padding:11px 11px 9px; }
   #panel-endpoint .mt-visual{ height:92px; }
   #panel-endpoint .activity-list{ padding:0; }
   #panel-endpoint .activity-header{ padding:11px 12px; }
+  body.tm-v6b #panel-endpoint .tm-circuit .ov-card-b{ padding:11px; }
+  body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-name{ font-size:13.5px; }
+  body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-donut{ width:48px; height:48px; }
+  body.tm-v6b #panel-endpoint .tm-row:nth-child(1) .tm-sub span:first-child{ font-size:17px; }
 }
 /* ═══ end v5 Instrument layer ═══ */
 
