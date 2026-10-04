@@ -1404,6 +1404,81 @@ html:not(.dark) .tbl tbody tr:hover{ background:rgba(84,69,203,.035); }
   .tablet-wide .content{ padding:20px 20px 48px; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════
+   VRouter v4 — "Mobile Polish" override layer   (scope: ≤768px)
+   Fixes Overview on phones: KPI cards were clipping their values
+   (23px value inside a 75px box) and the Live Requests table was
+   force-scrolling sideways (min-width:560px). Palette unchanged.
+   Appended last → wins cascade.  Rollback = delete this block.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width:768px){
+
+  /* ── overview vertical rhythm: one consistent 12px gutter ── */
+  #healthStrip{ margin-bottom:12px; }
+  #overviewAlerts{ margin-bottom:12px; }
+  .kpi-row{ margin-bottom:12px; }
+  .ov-grid{ margin-bottom:12px; }
+  .activity-feed{ margin-bottom:16px; }
+
+  /* ── KPI grid: guaranteed 2-up, fluid columns (kills the overflow) ── */
+  .kpi-row{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .kpi-card{
+    padding:12px 13px; gap:10px; border-radius:14px;
+    align-items:center; box-shadow:var(--sh-1);
+  }
+  .kpi-card:hover{ transform:none; }
+  .kpi-icon{ width:34px; height:34px; border-radius:10px; }
+  .kpi-icon svg{ width:16px; height:16px; }
+  .kpi-info{ min-width:0; }
+  .kpi-label{ font-size:9.5px; letter-spacing:.045em; line-height:1.15; }
+  .kpi-value{ font-size:19px; letter-spacing:-.4px; margin-top:3px; }
+  .kpi-sub{ font-size:9.5px; margin-top:2px; line-height:1.2; }
+  /* odd count (7 cards) → last card spans the full row, no half-empty gap */
+  .kpi-row>.kpi-card:last-child:nth-child(odd){ grid-column:1/-1; }
+
+  /* ── Live Requests: 6-col table → stacked 2-line rows, no sideways scroll ── */
+  .activity-feed .tbl-wrap{ overflow:visible; border-radius:0; }
+  .activity-feed table.tbl{
+    min-width:0 !important; width:100%;
+    border-collapse:separate; border-spacing:0;
+  }
+  .activity-feed table.tbl thead{ display:none; }
+  .activity-feed table.tbl,
+  .activity-feed table.tbl tbody{ display:block; }
+  .activity-feed table.tbl tbody tr{
+    display:grid;
+    grid-template-columns:12px minmax(0,1fr) auto auto;
+    grid-template-areas:
+      "st prov  time time"
+      "st model in   out";
+    align-items:center; column-gap:10px; row-gap:3px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--border-sub);
+  }
+  .activity-feed table.tbl tbody tr:last-child{ border-bottom:0; }
+  .activity-feed table.tbl tbody tr:hover{ background:rgba(124,58,237,.05); }
+  .activity-feed table.tbl td{
+    display:block; padding:0; border:0; min-width:0;
+    font-size:12px; text-align:left; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .activity-feed table.tbl td:nth-child(1){ grid-area:st; }
+  .activity-feed table.tbl td:nth-child(2){ grid-area:prov; max-width:none; font-weight:600; color:var(--text2); }
+  .activity-feed table.tbl td:nth-child(3){ grid-area:model; max-width:none; font-size:11px; }
+  .activity-feed table.tbl td:nth-child(4){ grid-area:in;  text-align:right !important; font-size:11px; }
+  .activity-feed table.tbl td:nth-child(5){ grid-area:out; text-align:right !important; font-size:11px; }
+  .activity-feed table.tbl td:nth-child(6){ grid-area:time; text-align:right !important; font-size:11px; }
+
+  /* ── Overview cards + health strip + alerts: even gutters ── */
+  .ov-grid{ gap:12px; }
+  .ov-grid>div>.ov-card{ border-radius:14px; }
+  .ov-card-h{ padding:12px 14px; }
+  .health-strip{ padding:10px 12px; border-radius:12px; gap:6px; }
+  .hs-dot{ max-width:170px; font-size:11px; padding:4px 9px; }
+  .ov-alert{ padding:9px 12px; border-radius:10px; }
+}
+
 </style>
 <script>
 /**
