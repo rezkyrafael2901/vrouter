@@ -1479,6 +1479,299 @@ html:not(.dark) .tbl tbody tr:hover{ background:rgba(84,69,203,.035); }
   .ov-alert{ padding:9px 12px; border-radius:10px; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   VRouter v5 — "INSTRUMENT" Overview re-skin   (scope: #panel-endpoint ONLY)
+   Design language CHANGE (not a palette swap): the old Overview was six
+   floating rounded cards with coloured icon tiles, hexagon rank badges,
+   circular gauges and a glowing scan-line chart. This layer turns it into
+   a flat "instrument cluster": ONE divided KPI strip, big tabular-mono
+   numerals, uppercase micro-labels, left colour rails, square ticks and
+   solid bars. Colours (tokens) are untouched -> it still matches the other
+   16 screens. No DOM / id / onclick / JS hook is modified -> every feature
+   behaves exactly as before.
+   Appended last -> wins the cascade.  Rollback = delete this one block.
+   ═══════════════════════════════════════════════════════════════════════ */
+#panel-endpoint{
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r-instr:10px;
+}
+
+/* ── 1. KPI row → ONE divided instrument strip ───────────────────────── */
+#panel-endpoint .kpi-row{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:0;
+  background:var(--card);
+  border:1px solid var(--border-sub);
+  border-radius:var(--r-instr);
+  box-shadow:none;
+  overflow:hidden;
+  margin-bottom:16px;
+}
+#panel-endpoint .kpi-card{
+  background:transparent;
+  border:0;
+  border-left:1px solid var(--border-sub);
+  border-radius:0;
+  box-shadow:none;
+  padding:13px 14px 14px;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:0;
+  position:relative;
+  overflow:hidden;
+  transition:background .2s ease;
+}
+#panel-endpoint .kpi-card:first-child{ border-left:0; }
+#panel-endpoint .kpi-card:hover{ background:var(--card2); transform:none; box-shadow:none; border-color:var(--border-sub); }
+#panel-endpoint .kpi-card::before{
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  opacity:0; transition:opacity .25s ease;
+}
+#panel-endpoint .kpi-card:hover::before{ opacity:1; }
+/* icon tile → faint corner glyph */
+#panel-endpoint .kpi-icon{
+  position:absolute; top:11px; right:11px;
+  width:auto; height:auto; border-radius:0;
+  background:none !important; box-shadow:none;
+  opacity:.45;
+}
+#panel-endpoint .kpi-icon svg{ width:14px; height:14px; }
+#panel-endpoint .kpi-info{ display:flex; flex-direction:column; width:100%; }
+/* big mono value FIRST, micro-label under it (inverted vs old card) */
+#panel-endpoint .kpi-value{
+  order:1;
+  font-family:var(--mono);
+  font-size:25px; font-weight:600; line-height:1.05;
+  letter-spacing:-.6px;
+  font-variant-numeric:tabular-nums;
+  padding-right:20px;
+}
+#panel-endpoint .kpi-label{
+  order:2;
+  margin-top:7px;
+  font-size:9px; font-weight:800; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text4);
+}
+#panel-endpoint .kpi-sub{
+  order:3;
+  margin-top:2px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.01em;
+  color:var(--text4);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+#panel-endpoint .kpi-spark{ display:none; }
+
+/* ── 2. Provider health strip → signal rail ──────────────────────────── */
+#panel-endpoint .health-strip-wrap{ margin-bottom:12px; }
+#panel-endpoint .health-strip{
+  display:flex; flex-wrap:wrap; gap:7px; align-items:center;
+  padding:9px 12px;
+  background:var(--card2);
+  border:1px solid var(--border-sub);
+  border-left:3px solid var(--green);
+  border-radius:var(--r-instr);
+}
+#panel-endpoint .hs-label{
+  font-size:9px; font-weight:800; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text4);
+}
+#panel-endpoint .hs-dot{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 9px;
+  border-radius:6px;
+  font-family:var(--mono); font-size:11px; font-weight:600;
+  background:var(--card); border:1px solid var(--border-sub);
+  max-width:190px;
+  transition:border-color .2s ease;
+}
+#panel-endpoint .hs-dot:hover{ border-color:rgba(124,58,237,.35); }
+#panel-endpoint .hs-dot .hs-dot-ind{
+  width:7px; height:7px; border-radius:2px; box-shadow:none;
+}
+#panel-endpoint .hs-dot.ok .hs-dot-ind{ background:var(--green); }
+#panel-endpoint .hs-dot.degraded .hs-dot-ind{ background:var(--amber); }
+#panel-endpoint .hs-dot.down .hs-dot-ind{ background:var(--red); }
+#panel-endpoint .hs-dot.off .hs-dot-ind{ background:var(--text4); }
+#panel-endpoint .hs-count{
+  font-family:var(--mono); font-size:10.5px; color:var(--text4);
+  letter-spacing:.01em;
+}
+
+/* ── 3. Alert banner → flat left-rail callouts ───────────────────────── */
+#panel-endpoint #overviewAlerts{ margin-bottom:12px; }
+#panel-endpoint .ov-alert{
+  padding:9px 12px; border-radius:8px; font-size:12.5px; font-weight:500;
+  border:1px solid transparent;
+  border-left-width:3px;
+  box-shadow:none;
+}
+#panel-endpoint .ov-alert.crit{
+  background:rgba(248,113,113,.06);
+  border-color:rgba(248,113,113,.16);
+  border-left-color:var(--red);
+}
+#panel-endpoint .ov-alert.warn{
+  background:rgba(251,191,36,.06);
+  border-color:rgba(251,191,36,.16);
+  border-left-color:var(--amber);
+}
+#panel-endpoint .ov-alert .ov-alert-tag{
+  background:transparent !important;
+  color:inherit !important;
+  border:1px solid currentColor;
+  border-radius:5px;
+  font-size:8.5px; font-weight:800; letter-spacing:.11em;
+  padding:1px 6px;
+}
+
+/* ── 4. Shared card shell: flat panel, rail header ───────────────────── */
+#panel-endpoint .ov-grid{ gap:12px; margin-bottom:12px; }
+#panel-endpoint .ov-card,
+#panel-endpoint .ov-grid>div>.ov-card{
+  background:var(--card);
+  border:1px solid var(--border-sub);
+  border-radius:var(--r-instr);
+  box-shadow:none;
+}
+#panel-endpoint .ov-card:hover{
+  border-color:rgba(124,58,237,.28); box-shadow:none;
+}
+#panel-endpoint .ov-card-h{
+  padding:11px 14px;
+  border-bottom:1px solid var(--border-sub);
+  background:linear-gradient(180deg,rgba(124,58,237,.05),transparent);
+}
+#panel-endpoint .ov-card-h:hover{ background:linear-gradient(180deg,rgba(124,58,237,.09),transparent); }
+#panel-endpoint .ov-card-ico{
+  width:20px; height:20px; border-radius:6px;
+  background:var(--card2) !important;
+  color:var(--accent-h) !important;
+  border:1px solid var(--border-sub);
+  box-shadow:none !important;
+}
+#panel-endpoint .ov-card-ico svg{ width:12px; height:12px; }
+#panel-endpoint .ov-card-h .ov-card-title{
+  font-size:11px; font-weight:800; letter-spacing:.09em;
+  text-transform:uppercase;
+}
+#panel-endpoint .ov-card-h .ov-card-more{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.01em;
+  color:var(--text4);
+}
+#panel-endpoint .ov-card-b{ padding:13px 14px 14px; }
+
+/* ── 5. Top Models → rank leaderboard (no hexagon / circuit / shimmer) ─ */
+#panel-endpoint .tm-circuit::before{ display:none; }          /* kill grid backdrop */
+#panel-endpoint .tm-row{
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr);
+  align-items:center;
+  column-gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid var(--border-sub);
+}
+#panel-endpoint .tm-row:last-child{ border-bottom:0; padding-bottom:2px; }
+#panel-endpoint .tm-row:first-child{ padding-top:2px; }
+#panel-endpoint .tm-row::before{ display:none; }              /* kill connector line */
+#panel-endpoint .tm-hex{ width:26px; height:26px; margin-right:0; }
+#panel-endpoint .tm-hex svg{ display:none; }                  /* kill hexagon badge */
+#panel-endpoint .tm-hex-num{
+  font-family:var(--mono); font-size:15px; font-weight:700;
+  letter-spacing:-1px;
+}
+#panel-endpoint .tm-top{ gap:10px; }
+#panel-endpoint .tm-name{ font-size:12.5px; font-weight:600; letter-spacing:-.15px; }
+#panel-endpoint .tm-donut{ width:28px; height:28px; }
+#panel-endpoint .tm-sub{
+  margin:4px 0 6px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.01em;
+}
+#panel-endpoint .tm-bar{ height:4px; border-radius:2px; background:var(--bg3); }
+#panel-endpoint .tm-bar-fill{ border-radius:2px; }
+#panel-endpoint .tm-bar-fill::after{ display:none; }          /* kill shimmer sweep */
+
+/* ── 6. Mini Traffic → flat plot + stat chips ────────────────────────── */
+#panel-endpoint .mt-card{ border-radius:var(--r-instr); }
+#panel-endpoint .mt-visual{
+  height:100px; border-radius:8px; margin:8px 0 6px;
+  background:var(--bg2);
+  border:1px solid var(--border-sub);
+}
+#panel-endpoint .mt-grid{ display:none; }                     /* kill grid */
+#panel-endpoint .mt-scan{ display:none; }                     /* kill scan line */
+#panel-endpoint .mt-line{ stroke:var(--accent-h); stroke-width:2; filter:none; }
+#panel-endpoint .mt-area{ fill:var(--accent); opacity:.09; }
+#panel-endpoint .mt-dot{ display:none; }                      /* kill vertex dots */
+#panel-endpoint .mt-peak{ fill:var(--accent2); stroke:none; }
+#panel-endpoint .mt-legend{ gap:7px; font-size:10px; margin-bottom:2px; }
+#panel-endpoint .mt-legend span{
+  background:var(--card2);
+  border:1px solid var(--border-sub);
+  border-radius:6px;
+  padding:3px 8px;
+  font-family:var(--mono);
+  color:var(--text3);
+}
+#panel-endpoint .mt-legend b{ font-weight:700; }
+#panel-endpoint .mt-axis{ font-family:var(--mono); font-size:9.5px; letter-spacing:.01em; }
+#panel-endpoint .mt-total{ font-family:var(--mono); font-size:9.5px; }
+
+/* ── 7. Live Requests → panel + mono rows + square status ticks ──────── */
+#panel-endpoint .activity-feed{
+  background:var(--card);
+  border:1px solid var(--border-sub);
+  border-radius:var(--r-instr);
+  overflow:hidden;
+  margin-bottom:0;
+}
+#panel-endpoint .activity-header{
+  margin:0;
+  padding:12px 14px;
+  border-bottom:1px solid var(--border-sub);
+  background:linear-gradient(180deg,rgba(124,58,237,.05),transparent);
+  font-size:11px; font-weight:800; letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--text2);
+}
+#panel-endpoint .activity-list{ padding:0; }
+#panel-endpoint .act-status{ width:8px; height:8px; border-radius:2px; }
+#panel-endpoint .act-provider{ font-family:var(--mono); font-weight:600; }
+#panel-endpoint .act-model{ font-family:var(--mono); }
+
+/* ── 8. Responsive re-assert (appended layer must restore breakpoints) ─ */
+@media (min-width:769px) and (max-width:1100px){
+  #panel-endpoint .kpi-row{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+  #panel-endpoint .kpi-card:nth-child(3n+1){ border-left:0; }
+  #panel-endpoint .kpi-card:nth-child(n+4){ border-top:1px solid var(--border-sub); }
+}
+@media (max-width:768px){
+  #panel-endpoint .kpi-row{ grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:12px; }
+  #panel-endpoint .kpi-card{ padding:11px 12px 12px; border-left:0; border-top:1px solid var(--border-sub); }
+  #panel-endpoint .kpi-card:nth-child(odd){ border-left:0; }
+  #panel-endpoint .kpi-card:nth-child(even){ border-left:1px solid var(--border-sub); }
+  #panel-endpoint .kpi-card:nth-child(-n+2){ border-top:0; }
+  #panel-endpoint .kpi-icon{ display:none; }
+  #panel-endpoint .kpi-value{ font-size:21px; padding-right:0; }
+  #panel-endpoint .kpi-label{ font-size:8.5px; margin-top:5px; }
+  #panel-endpoint .kpi-sub{ font-size:9px; }
+  #panel-endpoint .kpi-card:hover{ background:transparent; }
+  #panel-endpoint .kpi-card::before{ display:none; }
+  #panel-endpoint .health-strip{ padding:8px 10px; gap:6px; }
+  #panel-endpoint .ov-alert{ padding:8px 11px; border-radius:7px; }
+  #panel-endpoint .ov-card-h{ padding:10px 12px; }
+  #panel-endpoint .ov-card-b{ padding:11px 12px 12px; }
+  #panel-endpoint .tm-row{ grid-template-columns:26px minmax(0,1fr); column-gap:8px; padding:9px 0; }
+  #panel-endpoint .tm-hex{ width:24px; height:24px; }
+  #panel-endpoint .tm-name{ font-size:12px; }
+  #panel-endpoint .mt-visual{ height:92px; }
+  #panel-endpoint .activity-list{ padding:0; }
+  #panel-endpoint .activity-header{ padding:11px 12px; }
+}
+/* ═══ end v5 Instrument layer ═══ */
+
 </style>
 <script>
 /**
