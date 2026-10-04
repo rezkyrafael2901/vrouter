@@ -2264,23 +2264,6 @@ function startAutoRefresh(intervalMs){
   },intervalMs);
 }
 
-/* ═══ LATENCY SUMMARY CARD ═══ */
-function latencySummaryCard(){
-  const allSeries=Object.values(state.latency_series||{});
-  if(!allSeries.length)return '';
-  const flat=allSeries.flat();
-  if(!flat.length)return '';
-  const avg=Math.round(flat.reduce((a,b)=>a+b,0)/flat.length);
-  const minV=Math.min(...flat),maxV=Math.max(...flat);
-  const p95=flat.slice().sort((a,b)=>a-b)[Math.floor(flat.length*0.95)]||0;
-  return `<div class="stat stat-purple">
-    <div class="stat-ico"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-    <div class="stat-lbl">Latency Summary</div>
-    <div class="stat-val" style="font-size:24px">${Math.round(avg)}ms</div>
-    <div class="stat-sub">min ${Math.round(minV)}ms · p95 ${p95}ms · max ${Math.round(maxV)}ms</div>
-  </div>`;
-}
-
 function fmtNum(n){
   n=n||0;
   if(n>=1e9)return (n/1e9).toFixed(2)+'B';
@@ -2461,9 +2444,6 @@ function renderDashboard(){
   const totalReq=(t.ok||0)+(s.total_errors||0);
   const successRate=totalReq>0?Math.round(((t.ok||0)/totalReq)*100):100;
   const successColor=successRate>=95?'#34D399':successRate>=80?'#FBBF24':'#F87171';
-  const allSeries=Object.values(s.latency_series||{});
-  const flatLat=allSeries.flat();
-  const avgLat=flatLat.length?Math.round(flatLat.reduce((a,b)=>a+b,0)/flatLat.length):0;
 
   // Merged KPI cards — 6 unique, KPI style with Stats Grid icons
   var kpis=[
@@ -2484,10 +2464,7 @@ function renderDashboard(){
      sub:'today '+fmtNum(d.out||0),spark:''},
     {label:'Est. Cost',value:fmtCost(t.cost||0),color:'#8b5cf6',
      icon:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
-     sub:'today '+fmtCost(d.cost||0),spark:costGaugeBar(t.cost,d.cost)},
-    {label:'Latency Summary',value:Math.round(avgLat||0)+'ms',color:'#8b5cf6',
-     icon:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
-     sub:'avg '+Math.round(avgLat||0)+'ms',spark:''}
+     sub:'today '+fmtCost(d.cost||0),spark:costGaugeBar(t.cost,d.cost)}
   ];
 
   // Render KPI cards
