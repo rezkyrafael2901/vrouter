@@ -280,6 +280,7 @@ class Provider:
         self.models = []            # cached model list from provider
         self.manual_models = list(manual_models) if manual_models else []  # user-specified models
         self.models_fetched_at = 0.0
+        self.models_meta = {}       # id -> full upstream model object (context_length, arch, caps)
 
     @property
     def effective_models(self):
@@ -314,8 +315,22 @@ class Provider:
                 with httpx.Client(timeout=timeout) as c:
                     resp = c.get(url, headers=headers)
             if resp.status_code < 400:
-                data = resp.json().get("data", []) if isinstance(resp.json(), dict) else []
-                self.models = [m.get("id") for m in data if isinstance(m, dict) and m.get("id")]
+                body = resp.json() if isinstance(resp.json(), dict) else {}
+                data = body.get("data", []) if isinstance(body, dict) else []
+                ids, meta = [], {}
+                for m in data:
+                    if not isinstance(m, dict):
+                        continue
+                    mid = m.get("id")
+                    if not mid:
+                        continue
+                    ids.append(mid)
+                    # Keep the FULL upstream model object so /v1/models can pass
+                    # context_length through to clients that discover model
+                    # window sizes from the model list (Hermes, LiteLLM, OpenWebUI).
+                    meta[mid] = m
+                self.models = ids
+                self.models_meta = meta
                 self.models_fetched_at = time.time()
                 _save_models_cache()
                 return True, self.models
@@ -843,7 +858,8 @@ def load_history():
 
 def _save_models_cache():
     try:
-        cache = {name: {"models": p.models, "fetched_at": p.models_fetched_at}
+        cache = {name: {"models": p.models, "fetched_at": p.models_fetched_at,
+                        "meta": getattr(p, "models_meta", {})}
                  for name, p in PROVIDERS.items() if p.models}
         with open(MODELS_CACHE_PATH, "w") as f:
             json.dump(cache, f)
@@ -867,6 +883,7 @@ def _load_models_cache():
                 if p:
                     p.models = data.get("models", [])
                     p.models_fetched_at = data.get("fetched_at", 0)
+                    p.models_meta = data.get("meta", {}) or {}
                 else:
                     # Provider doesn't exist anymore — clean cache entry
                     cache.pop(name, None)
@@ -1502,6 +1519,26 @@ async def _hedge_stream(app: FastAPI, candidates: list, body: dict,
 # ---------------------------------------------------------------------------
 # Endpoints — API (gateway)
 # ---------------------------------------------------------------------------
+def _model_ctx_length(meta):
+    """Context window from an upstream model object (None when not reported)."""
+    if not isinstance(meta, dict):
+        return None
+    for key in ("context_length", "context_window", "max_context_length"):
+        val = meta.get(key)
+        if isinstance(val, bool):
+            continue
+        if isinstance(val, (int, float)) and val > 0:
+            return int(val)
+    return None
+
+
+def _provider_ctx_length(provider_name, model_id):
+    p = PROVIDERS.get(provider_name)
+    if not p or not model_id:
+        return None
+    return _model_ctx_length(getattr(p, "models_meta", {}).get(model_id))
+
+
 @app.get("/v1/models")
 async def list_models(authorization: Optional[str] = Header(None)):
     check_gateway_key(authorization)
@@ -1520,7 +1557,18 @@ async def list_models(authorization: Optional[str] = Header(None)):
             for route in combo.get("routes", [])
         )
         if combo_active and name not in seen:
-            data.append({"id": name, "object": "model", "created": 0, "owned_by": "combo"})
+            entry = {"id": name, "object": "model", "created": 0, "owned_by": "combo"}
+            # A combo's window = the largest window among its active routes.
+            ctx = None
+            for route in combo.get("routes", []):
+                if not active_providers.get(route.get("provider"), False):
+                    continue
+                rctx = _provider_ctx_length(route.get("provider"), route.get("model"))
+                if rctx and (ctx is None or rctx > ctx):
+                    ctx = rctx
+            if ctx:
+                entry["context_length"] = ctx
+            data.append(entry)
             seen.add(name)
     for p in PROVIDERS.values():
         if not active_providers.get(p.name, False):
@@ -1546,7 +1594,11 @@ async def list_models(authorization: Optional[str] = Header(None)):
             for m in visible_models:
                 mid = f"{p.prefix}/{m}"
                 if mid not in seen:
-                    data.append({"id": mid, "object": "model", "created": 0, "owned_by": p.name})
+                    entry = {"id": mid, "object": "model", "created": 0, "owned_by": p.name}
+                    ctx = _model_ctx_length(getattr(p, "models_meta", {}).get(m))
+                    if ctx:
+                        entry["context_length"] = ctx
+                    data.append(entry)
                     seen.add(mid)
     # Anthropic aliases (so /v1/messages clients see claude-* models)
     for alias in list(ANTHROPIC_MODEL_MAP.keys()) + ([ANTHROPIC_DEFAULT_MODEL] if ANTHROPIC_DEFAULT_MODEL else []):
@@ -3291,11 +3343,13 @@ async def refresh_all_models(request: Request):
             except Exception:
                 return {"provider": p.name, "ok": False, "error": "non-JSON", "count": len(p.models or [])}
             data = j.get("data", j) if isinstance(j, dict) else j
-            ids = sorted({m.get("id") for m in data
-                          if isinstance(m, dict) and m.get("id")}) if isinstance(data, list) else []
+            meta = {m["id"]: m for m in data
+                    if isinstance(m, dict) and m.get("id")} if isinstance(data, list) else {}
+            ids = sorted(meta) if meta else []
             if ids:
                 p.models = ids
                 p.models_fetched_at = time.time()
+                p.models_meta = meta   # keep context_length parity with fetch_models()
             return {"provider": p.name, "ok": True, "count": len(ids)}
         except Exception as e:
             return {"provider": p.name, "ok": False, "error": str(e)[:120], "count": len(p.models or [])}
